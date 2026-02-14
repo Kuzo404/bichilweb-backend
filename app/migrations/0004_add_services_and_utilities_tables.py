@@ -11,36 +11,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Create Collateral table
-        migrations.CreateModel(
-            name='Collateral',
-            fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-            ],
-            options={'db_table': 'collateral', 'managed': True},
-        ),
-        # Create Conditions table
-        migrations.CreateModel(
-            name='Conditions',
-            fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-            ],
-            options={'db_table': 'conditions', 'managed': True},
-        ),
-        # Create Document table
-        migrations.CreateModel(
-            name='Document',
-            fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-            ],
-            options={'db_table': 'document', 'managed': True},
-        ),
-        # Create Services table
-        migrations.CreateModel(
-            name='Services',
-            fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-            ],
-            options={'db_table': 'services', 'managed': True},
-        ),
+        # All CreateModel operations removed — they were duplicates of 0003_create_initial_tables.
+        # Collateral, Conditions, Document, and Services tables are already created in 0003.
     ]
