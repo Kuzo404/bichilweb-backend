@@ -91,6 +91,28 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
 
+# ============================================================================
+# UPLOAD & MEDIA SETTINGS
+# ============================================================================
+# Файл upload хэмжээний хязгаар (100MB хүртэл)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
+# Үнэт видео, зураг файлуудыг хүлээн авах
+FILE_UPLOAD_ALLOWED_MIME_TYPES = [
+    # Зураг
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    # Видео
+    'video/mp4',
+    'video/webm',
+    'video/quicktime',
+    'video/mpeg',
+    # Баримт
+    'application/pdf',
+]
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 if not DEBUG:
