@@ -19,16 +19,18 @@ class Migration(migrations.Migration):
 -- 1. STANDALONE TABLES (no foreign keys to app tables)
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS "language" (
-    id BIGSERIAL PRIMARY KEY,
-    lang_code TEXT,
-    lang_name TEXT
-);
+-- Language table is already created by migration 0003
+-- ALTER TABLE to add columns if they don't exist
+ALTER TABLE IF EXISTS "language"
+ADD COLUMN IF NOT EXISTS lang_code TEXT;
 
--- Insert default languages if not exist
+ALTER TABLE IF EXISTS "language"
+ADD COLUMN IF NOT EXISTS lang_name TEXT;
+
+-- Insert default languages if they don't exist (checking by lang_code)
 INSERT INTO "language" (id, lang_code, lang_name)
 VALUES (1, 'mn', 'Монгол'), (2, 'en', 'English')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS "font" (
     id BIGINT PRIMARY KEY,
