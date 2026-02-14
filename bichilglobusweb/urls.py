@@ -39,5 +39,6 @@ urlpatterns = [
     path('api/v1/', include(analytics_urls)),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Зураг, видео нуу MEDIA файлуудыг хадгалах
+# Development болон Production дээ хадгалах
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
