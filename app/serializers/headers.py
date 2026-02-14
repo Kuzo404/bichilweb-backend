@@ -35,7 +35,7 @@ class HeaderTertiaryMenuSerializer(serializers.ModelSerializer):
 
 class HeaderSubmenuSerializer(serializers.ModelSerializer):
     translations = HeaderSubmenuTranslationSerializer(source='headersubmenutranslation_set', many=True, read_only=True)
-    tertiary_menus = HeaderTertiaryMenuSerializer(source='headertertiarymenu_set', many=True, read_only=True)
+    tertiary_menus = HeaderTertiaryMenuSerializer(many=True, read_only=True)
 
     class Meta:
         model = HeaderSubmenu
@@ -43,7 +43,7 @@ class HeaderSubmenuSerializer(serializers.ModelSerializer):
 
 class HeaderMenuSerializer(serializers.ModelSerializer):
     translations = HeaderMenuTranslationSerializer(source='headermenutranslation_set', many=True, read_only=True)
-    submenus = HeaderSubmenuSerializer(source='headersubmenu_set', many=True, read_only=True)
+    submenus = HeaderSubmenuSerializer(many=True, read_only=True)
 
     class Meta:
         model = HeaderMenu
@@ -55,7 +55,7 @@ class HeaderStyleSerializer(serializers.ModelSerializer):
         fields = ['id', 'bgcolor', 'fontcolor', 'hovercolor', 'height', 'sticky', 'max_width', 'logo_size']
 
 class HeaderSerializer(serializers.ModelSerializer):
-    menus = HeaderMenuSerializer(source='headermenu_set', many=True, read_only=True)
+    menus = HeaderMenuSerializer(many=True, read_only=True)
     styles = HeaderStyleSerializer(source='headerstyle_set', many=True, read_only=True)
 
     class Meta:
