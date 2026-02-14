@@ -1,4 +1,4 @@
-# Generated migration - Create Services table with full structure
+# Generated migration - Recreate Services table with full structure
 
 from django.db import migrations, models
 import django.db.models.deletion
@@ -11,13 +11,17 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Drop the incomplete Services table and recreate it properly
+        # Drop the old services tables and recreate properly
         migrations.RunSQL(
-            sql="DROP TABLE IF EXISTS \"Services\" CASCADE;",
+            sql='DROP TABLE IF EXISTS "Services" CASCADE; DROP TABLE IF EXISTS "services" CASCADE;',
             reverse_sql="SELECT 1;",
-            state_operations=[]
         ),
-        
+
+        # Remove old Services model from Django state before re-creating
+        migrations.DeleteModel(
+            name='Services',
+        ),
+
         # Create the complete Services table
         migrations.CreateModel(
             name='Services',
@@ -31,7 +35,7 @@ class Migration(migrations.Migration):
                 'managed': True,
             },
         ),
-        
+
         # Create ServicesTranslations table
         migrations.CreateModel(
             name='ServicesTranslations',
