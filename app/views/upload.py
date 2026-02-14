@@ -40,6 +40,18 @@ class FileUploadView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
+            # Cloudinary API key баталгаажуулах
+            if not settings.CLOUDINARY_STORAGE.get('API_KEY'):
+                return Response(
+                    {
+                        'error': '❌ Cloudinary API key идэвхгүй байна! '
+                                'Render Settings → Environment Variables дээр дараах хувьсагчуудыг оруулна үү: '
+                                'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET '
+                                'Дэлгэрэнгүй: https://console.cloudinary.com',
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+
             file_obj = request.FILES.get('file')
             if not file_obj:
                 return Response(

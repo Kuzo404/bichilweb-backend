@@ -129,6 +129,18 @@ import cloudinary
 import cloudinary.api
 import cloudinary.uploader
 
+# API key үргэлж оршин байхыг шалгах (production дээр алдаа гаргана)
+if not CLOUDINARY_STORAGE['API_KEY']:
+    if not DEBUG:
+        raise ValueError(
+            "❌ CLOUDINARY_API_KEY environment variable идэвхгүй байна!\n"
+            "Render Settings → Environment Variables дээр дараах хувьсагчуудыг нэмнэ үү:\n"
+            "  - CLOUDINARY_CLOUD_NAME=bichil\n"
+            "  - CLOUDINARY_API_KEY=114548364694963\n"
+            "  - CLOUDINARY_API_SECRET=4T8kJhdnvGzyHKnPzxwBKl7xU30\n"
+            "See: https://console.cloudinary.com"
+        )
+
 cloudinary.config(
     cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
     api_key=CLOUDINARY_STORAGE['API_KEY'],
