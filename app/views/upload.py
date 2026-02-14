@@ -1,43 +1,41 @@
 """
 Зураг, видео upload хийх API view.
-Файлуудыг Django-ийн media хавтаст хадгалаад URL-ийг буцаана.
+Файлуудыг Cloudinary cloud storage дээр хадгалаад URL-ийг буцаана.
 """
-import os
-import uuid
 import mimetypes
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
+import cloudinary
+import cloudinary.uploader
 
 
 class FileUploadView(APIView):
     """
     POST /api/v1/upload/
-    Зураг, видео, баримт файлуудыг media/ хавтаст хадгална.
-    Буцаах: { "url": "/media/uploads/filename.ext", "file_type": "image|video|document" }
+    Зураг, видео, баримт файлуудыг Cloudinary дээр хадгалана.
+    Буцаах: { "url": "cloudinary_url", "file_type": "image|video|document" }
     """
     parser_classes = (MultiPartParser, FormParser)
     
     # Дүлхүүрт өврүүлэх боломжтой файл төрлүүд
     ALLOWED_MIME_TYPES = {
         # Зураг
-        'image/jpeg': 'image',
-        'image/png': 'image',
-        'image/gif': 'image',
-        'image/webp': 'image',
-        'image/svg+xml': 'image',
+        'image/jpeg': {'type': 'image', 'resource_type': 'image'},
+        'image/png': {'type': 'image', 'resource_type': 'image'},
+        'image/gif': {'type': 'image', 'resource_type': 'image'},
+        'image/webp': {'type': 'image', 'resource_type': 'image'},
+        'image/svg+xml': {'type': 'image', 'resource_type': 'image'},
         # Видео
-        'video/mp4': 'video',
-        'video/webm': 'video',
-        'video/quicktime': 'video',
-        'video/mpeg': 'video',
-        'video/x-msvideo': 'video',
+        'video/mp4': {'type': 'video', 'resource_type': 'video'},
+        'video/webm': {'type': 'video', 'resource_type': 'video'},
+        'video/quicktime': {'type': 'video', 'resource_type': 'video'},
+        'video/mpeg': {'type': 'video', 'resource_type': 'video'},
+        'video/x-msvideo': {'type': 'video', 'resource_type': 'video'},
         # Баримт
-        'application/pdf': 'document',
-        'application/msword': 'document',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'document',
+        'application/pdf': {'type': 'document', 'resource_type': 'raw'},
     }
 
     def post(self, request, *args, **kwargs):
@@ -76,37 +74,50 @@ class FileUploadView(APIView):
                 )
 
             # Файлын төрлийг тодорхойлох
-            file_type = self.ALLOWED_MIME_TYPES.get(mime_type, 'document')
+            file_config = self.ALLOWED_MIME_TYPES[mime_type]
+            file_type = file_config['type']
+            resource_type = file_config['resource_type']
 
-            # Файлын нэрийг давхцахгүй болгох
-            ext = os.path.splitext(file_obj.name)[1].lower()
-            unique_name = f"{uuid.uuid4().hex}{ext}"
+            # Cloudinary дээр upload хийх
+            try:
+                # Файлыг төрлөөр нь folder-д оруулах
+                public_id = f"bichil/{file_type}/{file_obj.name.split('.')[0]}"
+                
+                upload_result = cloudinary.uploader.upload(
+                    file_obj,
+                    resource_type=resource_type,
+                    public_id=public_id,
+                    folder=f"bichil/{file_type}",
+                    overwrite=True,
+                    quality='auto',
+                    fetch_format='auto',
+                    flags='progressive' if file_type == 'image' else None,
+                )
 
-            # Хадгалах хавтас (төрлөөр хүлэх)
-            upload_type_dir = os.path.join(settings.MEDIA_ROOT, 'uploads', file_type)
-            os.makedirs(upload_type_dir, exist_ok=True)
+                # Cloudinary URL авах
+                file_url = upload_result['secure_url']
 
-            # Файлыг хадгалах
-            file_path = os.path.join(upload_type_dir, unique_name)
-            with open(file_path, 'wb+') as dest:
-                for chunk in file_obj.chunks(chunk_size=1024 * 1024):  # 1MB chunks
-                    dest.write(chunk)
+                return Response(
+                    {
+                        'url': file_url,
+                        'file_url': file_url,
+                        'filename': upload_result.get('public_id', file_obj.name),
+                        'file_type': file_type,
+                        'mime_type': mime_type,
+                        'size': file_size,
+                        'cloudinary_public_id': upload_result.get('public_id'),
+                    },
+                    status=status.HTTP_201_CREATED
+                )
+            except Exception as upload_error:
+                return Response(
+                    {'error': f'Cloudinary upload алдаа: {str(upload_error)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
-            # URL буцаах
-            file_url = f"{settings.MEDIA_URL}uploads/{file_type}/{unique_name}"
-            return Response(
-                {
-                    'url': file_url,
-                    'file_url': file_url,
-                    'filename': unique_name,
-                    'file_type': file_type,
-                    'mime_type': mime_type,
-                    'size': file_size,
-                },
-                status=status.HTTP_201_CREATED
-            )
         except Exception as e:
             return Response(
                 {'error': f'Файл хадгалахад алдаа гарлаа: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+

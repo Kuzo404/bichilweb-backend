@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'cloudinary',
     'app',
 ]
 
@@ -112,6 +113,27 @@ FILE_UPLOAD_ALLOWED_MIME_TYPES = [
     # Баримт
     'application/pdf',
 ]
+
+# ============================================================================
+# CLOUDINARY STORAGE CONFIGURATION
+# ============================================================================
+# Зураг, видео нуу бүх media файлуудыг Cloudinary дээр хадгалах
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default='bichil'),
+    'API_KEY': env('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': env('CLOUDINARY_API_SECRET', default=''),
+}
+
+# Cloudinary шууд ашигла
+import cloudinary
+import cloudinary.api
+import cloudinary.uploader
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=CLOUDINARY_STORAGE['API_SECRET'],
+)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
