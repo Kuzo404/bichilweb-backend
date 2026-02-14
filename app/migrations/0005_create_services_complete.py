@@ -11,15 +11,17 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Drop the old services tables and recreate properly
-        migrations.RunSQL(
-            sql='DROP TABLE IF EXISTS "Services" CASCADE; DROP TABLE IF EXISTS "services" CASCADE;',
-            reverse_sql="SELECT 1;",
-        ),
-
-        # Remove old Services model from Django state before re-creating
-        migrations.DeleteModel(
-            name='Services',
+        # Drop old services table from DB + remove from Django state (separately)
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql='DROP TABLE IF EXISTS "Services" CASCADE; DROP TABLE IF EXISTS "services" CASCADE;',
+                    reverse_sql="SELECT 1;",
+                ),
+            ],
+            state_operations=[
+                migrations.DeleteModel(name='Services'),
+            ],
         ),
 
         # Create the complete Services table
