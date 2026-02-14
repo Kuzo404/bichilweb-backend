@@ -696,7 +696,7 @@ class Header(models.Model):
 
 class HeaderMenu(models.Model):
     id = models.BigAutoField(primary_key=True)
-    header = models.ForeignKey(Header, models.DO_NOTHING, db_column='header', blank=True, null=True)
+    header = models.ForeignKey(Header, models.CASCADE, db_column='header', blank=True, null=True, related_name='menus')
     font = models.BigIntegerField(blank=True, null=True)
     path = models.TextField(blank=True, null=True)
     index = models.SmallIntegerField(blank=True, null=True)
@@ -736,7 +736,7 @@ class HeaderStyle(models.Model):
 
 class HeaderSubmenu(models.Model):
     id = models.BigAutoField(primary_key=True)
-    header_menu = models.ForeignKey(HeaderMenu, models.DO_NOTHING, db_column='header_menu', blank=True, null=True)
+    header_menu = models.ForeignKey(HeaderMenu, models.CASCADE, db_column='header_menu', blank=True, null=True, related_name='submenus')
     font = models.BigIntegerField(blank=True, null=True)
     path = models.TextField(blank=True, null=True)
     index = models.SmallIntegerField(blank=True, null=True)
@@ -760,7 +760,7 @@ class HeaderSubmenuTranslation(models.Model):
 
 class HeaderTertiaryMenu(models.Model):
     id = models.BigAutoField(primary_key=True)
-    header_submenu = models.ForeignKey(HeaderSubmenu, models.DO_NOTHING, db_column='header_submenu', blank=True, null=True)
+    header_submenu = models.ForeignKey(HeaderSubmenu, models.CASCADE, db_column='header_submenu', blank=True, null=True, related_name='tertiary_menus')
     font = models.TextField(blank=True, null=True)
     path = models.TextField(blank=True, null=True)
     index = models.SmallIntegerField(blank=True, null=True)
