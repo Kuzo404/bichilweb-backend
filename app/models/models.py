@@ -709,7 +709,7 @@ class HeaderMenu(models.Model):
 
 class HeaderMenuTranslation(models.Model):
     id = models.BigAutoField(primary_key=True)
-    menu = models.ForeignKey(HeaderMenu, models.DO_NOTHING, db_column='menu', blank=True, null=True)
+    menu = models.ForeignKey(HeaderMenu, models.CASCADE, db_column='menu', blank=True, null=True)
     language = models.ForeignKey('Language', models.DO_NOTHING, db_column='language', blank=True, null=True)
     label = models.TextField(blank=True, null=True)
 
@@ -749,7 +749,7 @@ class HeaderSubmenu(models.Model):
 
 class HeaderSubmenuTranslation(models.Model):
     id = models.BigAutoField(primary_key=True)
-    submenu = models.ForeignKey(HeaderSubmenu, models.DO_NOTHING, db_column='submenu', blank=True, null=True)
+    submenu = models.ForeignKey(HeaderSubmenu, models.CASCADE, db_column='submenu', blank=True, null=True)
     language = models.ForeignKey('Language', models.DO_NOTHING, db_column='language', blank=True, null=True)
     label = models.TextField(blank=True, null=True)
 
@@ -773,7 +773,7 @@ class HeaderTertiaryMenu(models.Model):
 
 class HeaderTertiaryMenuTranslation(models.Model):
     id = models.BigAutoField(primary_key=True)
-    tertiary_menu = models.ForeignKey(HeaderTertiaryMenu, models.DO_NOTHING, db_column='tertiary_menu', blank=True, null=True)
+    tertiary_menu = models.ForeignKey(HeaderTertiaryMenu, models.CASCADE, db_column='tertiary_menu', blank=True, null=True)
     language = models.ForeignKey('Language', models.DO_NOTHING, db_column='language', blank=True, null=True)
     label = models.TextField(blank=True, null=True)
 
