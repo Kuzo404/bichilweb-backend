@@ -157,7 +157,7 @@ class NewsViewSet(viewsets.ModelViewSet):
 class NewsPageSettingsSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = NewsPageSettings
-        fields = ('id', 'latest_heading', 'featured_heading')
+        fields = ('id', 'latest_heading', 'featured_heading', 'latest_heading_en', 'featured_heading_en')
 
 
 @api_view(['GET', 'PUT'])
@@ -165,6 +165,8 @@ def news_page_settings_view(request):
     settings, _ = NewsPageSettings.objects.get_or_create(id=1, defaults={
         'latest_heading': 'Сүүлийн мэдээнүүд',
         'featured_heading': 'Онцлох мэдээ',
+        'latest_heading_en': '',
+        'featured_heading_en': '',
     })
     
     if request.method == 'GET':

@@ -103,32 +103,28 @@ class NewsWriteSerializer(serializers.ModelSerializer):
         except json.JSONDecodeError:
             raise serializers.ValidationError("Invalid JSON format for content_translations")
 
-    def _save_image(self, image_file):
-        """Save image and return filename"""
-        upload_dir = os.path.join(settings.MEDIA_ROOT, 'news')
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        ext = os.path.splitext(image_file.name)[1].lower()
-        filename = f"{uuid.uuid4()}{ext}"
-        filepath = os.path.join(upload_dir, filename)
-        
-        with open(filepath, 'wb+') as destination:
-            for chunk in image_file.chunks():
-                destination.write(chunk)
-        
-        return filename
+    def _upload_to_cloudinary(self, image_file):
+        """Upload image to Cloudinary and return URL"""
+        result = cloudinary.uploader.upload(
+            image_file,
+            folder='news',
+            resource_type='image',
+        )
+        return result.get('secure_url', '')
 
-    def _delete_image(self, filename):
-        """Delete old image"""
-        if filename:
-            clean_filename = filename.replace('media/', '').replace('news/', '')
-            image_path = os.path.join(settings.MEDIA_ROOT, 'news', clean_filename)
-            if os.path.exists(image_path):
-                try:
-                    os.remove(image_path)
-                    print(f"✅ Image deleted: {clean_filename}")
-                except Exception as e:
-                    print(f"❌ Error deleting image: {e}")
+    def _delete_from_cloudinary(self, image_url):
+        """Delete image from Cloudinary by URL"""
+        if not image_url or 'cloudinary.com' not in str(image_url):
+            return
+        try:
+            match = re.search(r'/upload/v\d+/(.+)$', image_url)
+            if match:
+                public_id_with_ext = match.group(1)
+                public_id = public_id_with_ext.rsplit('.', 1)[0]
+                cloudinary.uploader.destroy(public_id, resource_type='image')
+                print(f"✅ News Cloudinary image deleted: {public_id}")
+        except Exception as e:
+            print(f"❌ News Cloudinary delete error: {e}")
 
     def _get_language_instance(self, language_id):
         """Get Language instance by ID"""

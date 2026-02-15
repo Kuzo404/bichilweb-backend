@@ -1056,6 +1056,8 @@ class NewsPageSettings(models.Model):
     id = models.BigAutoField(primary_key=True)
     latest_heading = models.TextField(default='Сүүлийн мэдээнүүд')
     featured_heading = models.TextField(default='Онцлох мэдээ')
+    latest_heading_en = models.TextField(default='', blank=True, null=True)
+    featured_heading_en = models.TextField(default='', blank=True, null=True)
 
     class Meta:
         managed = False
