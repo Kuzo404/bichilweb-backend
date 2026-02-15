@@ -27,7 +27,7 @@ class AppDownloadReadSerializer(serializers.ModelSerializer):
             'bgcolor', 'fontcolor', 'titlecolor', 'iconcolor',
             'buttonbgcolor', 'buttonfontcolor',
             'googlebuttonbgcolor', 'googlebuttonfontcolor',
-            'active', 'layout', 'features_layout',
+            'active', 'layout', 'mobile_layout', 'features_layout',
             'titles', 'lists',
         ]
 
@@ -53,7 +53,7 @@ class AppDownloadWriteSerializer(serializers.ModelSerializer):
             'bgcolor', 'fontcolor', 'titlecolor', 'iconcolor',
             'buttonbgcolor', 'buttonfontcolor',
             'googlebuttonbgcolor', 'googlebuttonfontcolor',
-            'active', 'layout', 'features_layout',
+            'active', 'layout', 'mobile_layout', 'features_layout',
             'titles', 'lists', 'image_file',
         ]
 

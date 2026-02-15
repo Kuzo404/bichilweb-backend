@@ -195,6 +195,7 @@ class AppDownload(models.Model):
     googlebuttonfontcolor = models.TextField(blank=True, null=True)
     active = models.BooleanField(default=True, blank=True, null=True)
     layout = models.TextField(default='standard', blank=True, null=True)
+    mobile_layout = models.TextField(default='image-top', blank=True, null=True)
     features_layout = models.TextField(default='vertical', blank=True, null=True)
 
     class Meta:
