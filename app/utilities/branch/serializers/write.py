@@ -22,7 +22,7 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branches
         fields = [
-            "id", "name", "location", "image", "area", "city", 
+            "id", "name", "name_en", "location", "image", "area", "city", 
             "district", "open", "time", "latitude", "longitude", "phones",
             "category_id"
         ]
@@ -121,6 +121,7 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
             print(f"✅ Branch image updated on Cloudinary: {cloudinary_url}")
         
         instance.name = validated_data.get('name', instance.name)
+        instance.name_en = validated_data.get('name_en', instance.name_en)
         instance.location = validated_data.get('location', instance.location)
         instance.area = validated_data.get('area', instance.area)
         instance.city = validated_data.get('city', instance.city)

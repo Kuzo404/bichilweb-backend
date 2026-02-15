@@ -102,7 +102,11 @@ class NewsReadSerializer(serializers.ModelSerializer):
         if not obj.image:
             return None
         
-        # Clean the filename
+        # If it's already a full Cloudinary URL, return as-is
+        if obj.image.startswith('http'):
+            return obj.image
+        
+        # Legacy local file fallback
         clean_filename = obj.image.replace('media/', '').replace('news/', '')
         
         # Try to get the request from context

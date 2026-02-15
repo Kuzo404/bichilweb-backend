@@ -10,7 +10,7 @@ class BranchPhoneReadSerializer(serializers.ModelSerializer):
 class BranchCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BranchCategory
-        fields = ["id", "name", "sort_order", "active"]
+        fields = ["id", "name", "name_en", "sort_order", "active"]
 
 
 class BranchesReadSerializer(serializers.ModelSerializer):
@@ -18,13 +18,14 @@ class BranchesReadSerializer(serializers.ModelSerializer):
     phones = serializers.SerializerMethodField()
     category_id = serializers.SerializerMethodField()
     category_name = serializers.SerializerMethodField()
+    category_name_en = serializers.SerializerMethodField()
     
     class Meta:
         model = Branches
         fields = [
-            "id", "name", "location", "image", "image_url", "area", "city", 
+            "id", "name", "name_en", "location", "image", "image_url", "area", "city", 
             "district", "open", "time", "latitude", "longitude", "phones",
-            "category_id", "category_name"
+            "category_id", "category_name", "category_name_en"
         ]
     
     def get_image_url(self, obj):
@@ -51,6 +52,9 @@ class BranchesReadSerializer(serializers.ModelSerializer):
 
     def get_category_name(self, obj):
         return obj.category.name if obj.category else None
+
+    def get_category_name_en(self, obj):
+        return obj.category.name_en if obj.category else None
 
 
 class BranchPageSettingsSerializer(serializers.ModelSerializer):

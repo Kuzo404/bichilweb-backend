@@ -9,9 +9,17 @@ from app.models.models import (
     Language  # Import Language model
 )
 import json
-import os
+import re
+import cloudinary
+import cloudinary.uploader
 from django.conf import settings
-import uuid
+
+# Cloudinary config
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
+)
 
 
 class NewsWriteSerializer(serializers.ModelSerializer):
@@ -141,9 +149,9 @@ class NewsWriteSerializer(serializers.ModelSerializer):
 
         # Save main image
         if image_file:
-            filename = self._save_image(image_file)
-            validated_data['image'] = filename
-            print(f"✅ News image saved: {filename}")
+            cloudinary_url = self._upload_to_cloudinary(image_file)
+            validated_data['image'] = cloudinary_url
+            print(f"\u2705 News image uploaded to Cloudinary: {cloudinary_url}")
 
         # Create news
         news = News.objects.create(**validated_data)
@@ -200,14 +208,14 @@ class NewsWriteSerializer(serializers.ModelSerializer):
 
         # Update main image
         if image_file:
-            # Delete old image
+            # Delete old image from Cloudinary
             if instance.image:
-                self._delete_image(instance.image)
+                self._delete_from_cloudinary(instance.image)
             
-            # Save new image
-            filename = self._save_image(image_file)
-            validated_data['image'] = filename
-            print(f"✅ News image updated: {filename}")
+            # Upload new image to Cloudinary
+            cloudinary_url = self._upload_to_cloudinary(image_file)
+            validated_data['image'] = cloudinary_url
+            print(f"\u2705 News image updated on Cloudinary: {cloudinary_url}")
 
         # Update news fields
         instance.category = validated_data.get('category', instance.category)

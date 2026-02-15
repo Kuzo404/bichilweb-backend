@@ -7,6 +7,17 @@ from app.news.category.serializers.read import NewsCategoryReadSerializer
 from app.news.category.serializers.write import NewsCategoryWriteSerializer
 from app.news.news.serializers.read import NewsReadSerializer
 from app.news.news.serializers.write import NewsWriteSerializer
+import re
+import cloudinary
+import cloudinary.uploader
+from django.conf import settings as django_settings
+
+# Cloudinary config
+cloudinary.config(
+    cloud_name=django_settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=django_settings.CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=django_settings.CLOUDINARY_STORAGE['API_SECRET'],
+)
 
 class NewsCategoryViewSet(viewsets.ModelViewSet):
     queryset = NewsCategory.objects.all().prefetch_related(
@@ -119,14 +130,18 @@ class NewsViewSet(viewsets.ModelViewSet):
         read_serializer = NewsReadSerializer(instance)
         data = read_serializer.data
         
+        # Delete image from Cloudinary if it's a Cloudinary URL
         if instance.image:
-            clean_filename = instance.image.replace('media/', '').replace('news/', '')
-            image_path = os.path.join(settings.MEDIA_ROOT, 'news', clean_filename)
-            if os.path.exists(image_path):
+            if 'cloudinary.com' in str(instance.image):
                 try:
-                    os.remove(image_path)
+                    match = re.search(r'/upload/v\d+/(.+)$', instance.image)
+                    if match:
+                        public_id_with_ext = match.group(1)
+                        public_id = public_id_with_ext.rsplit('.', 1)[0]
+                        cloudinary.uploader.destroy(public_id, resource_type='image')
+                        print(f"\u2705 News Cloudinary image deleted: {public_id}")
                 except Exception as e:
-                    print(f"Алдаа гарлаа: {e}")
+                    print(f"\u274c News Cloudinary delete error: {e}")
         
         instance.delete()
         

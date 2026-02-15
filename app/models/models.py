@@ -343,6 +343,7 @@ class AuthUserUserPermissions(models.Model):
 class BranchCategory(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.TextField()
+    name_en = models.TextField(blank=True, null=True, default='')
     sort_order = models.IntegerField(default=0)
     active = models.BooleanField(default=True)
 
@@ -367,6 +368,7 @@ class BranchPhone(models.Model):
 class Branches(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.TextField(blank=True, null=True)
+    name_en = models.TextField(blank=True, null=True, default='')
     location = models.TextField(blank=True, null=True)
     image = models.TextField(blank=True, null=True)
     area = models.TextField(blank=True, null=True)
