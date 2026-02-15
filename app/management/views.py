@@ -78,7 +78,7 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
 
     # ─── CREATE ───────────────────────────────────────────────────
     def create(self, request, *args, **kwargs):
-        data = request.data.copy()
+        data = self._build_data(request)
         image_file = request.FILES.get('image_file')
 
         try:
@@ -90,9 +90,6 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
                 {'detail': f'Cloudinary upload алдаа: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-        # Parse translations from flat FormData keys if needed
-        data = self._parse_translations(data)
 
         serializer = self.get_serializer(data=data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -105,7 +102,7 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        data = request.data.copy()
+        data = self._build_data(request)
         image_file = request.FILES.get('image_file')
 
         try:
@@ -118,9 +115,6 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
                 {'detail': f'Cloudinary upload алдаа: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-        # Parse translations from flat FormData keys if needed
-        data = self._parse_translations(data)
 
         serializer = self.get_serializer(
             instance, data=data, partial=partial, context={'request': request}
@@ -139,46 +133,64 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # ─── FormData translations parser ─────────────────────────────
-    def _parse_translations(self, data):
+    # ─── Build plain dict from request data ─────────────────────────
+    def _build_data(self, request):
         """
-        FormData sends nested arrays as flat keys like:
-          translations[0][language] = 1
-          translations[0][name] = "John"
-        Convert them back to a proper list of dicts.
+        QueryDict (FormData) → plain dict.
+        FormData-аар translations[0][language]=1, translations[0][name]=... гэж
+        ирэхээр nested list рүү хөрвүүлнэ.
+        JSON body байвал шууд буцаана.
         """
         import json
 
-        # If translations is already a proper structure (JSON body), return as-is
-        if 'translations' in data:
-            val = data.get('translations')
-            if isinstance(val, list):
-                return data
-            # Could be a JSON string
+        raw = request.data
+
+        # JSON body — already a plain dict with proper nesting
+        if request.content_type and 'application/json' in request.content_type:
+            if isinstance(raw, dict):
+                return dict(raw)
+            return raw
+
+        # Convert QueryDict to plain dict (single values)
+        data = {}
+        translations = {}
+
+        for key in raw.keys():
+            m = re.match(r'translations\[(\d+)\]\[(\w+)\]', key)
+            if m:
+                idx = int(m.group(1))
+                field = m.group(2)
+                if idx not in translations:
+                    translations[idx] = {}
+                val = raw[key]
+                # Convert language to int for PrimaryKeyRelatedField
+                if field == 'language':
+                    try:
+                        val = int(val)
+                    except (ValueError, TypeError):
+                        pass
+                translations[idx][field] = val
+            else:
+                val = raw[key]
+                # Convert known fields
+                if key == 'sort_order':
+                    try:
+                        val = int(val)
+                    except (ValueError, TypeError):
+                        val = 0
+                elif key == 'active':
+                    val = str(val).lower() in ('true', '1', 'yes')
+                data[key] = val
+
+        if translations:
+            data['translations'] = [translations[i] for i in sorted(translations.keys())]
+        elif 'translations' in data:
+            # Could be JSON string
+            val = data['translations']
             if isinstance(val, str):
                 try:
                     data['translations'] = json.loads(val)
-                    return data
                 except (json.JSONDecodeError, ValueError):
-                    pass
-
-        # Check for flat FormData keys like translations[0][language]
-        translations = {}
-        keys_to_remove = []
-        for key in list(data.keys()):
-            match = re.match(r'translations\[(\d+)\]\[(\w+)\]', key)
-            if match:
-                idx = int(match.group(1))
-                field = match.group(2)
-                if idx not in translations:
-                    translations[idx] = {}
-                translations[idx][field] = data[key]
-                keys_to_remove.append(key)
-
-        if translations:
-            for k in keys_to_remove:
-                if k in data:
-                    del data[k]
-            data['translations'] = [translations[i] for i in sorted(translations.keys())]
+                    data['translations'] = []
 
         return data
