@@ -49,6 +49,7 @@ class FooterWriteSerializer(serializers.ModelSerializer):
             'fontsize',
             'copyrighten',
             'copyrightmn',
+            'logo_size',
             'socials',
             'urls',
         ]

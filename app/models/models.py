@@ -653,6 +653,7 @@ class Footer(models.Model):
     fontsize = models.TextField(blank=True, null=True)
     copyrighten = models.TextField(db_column='copyrightEN', blank=True, null=True)  # Field name made lowercase.
     copyrightmn = models.TextField(db_column='copyrightMN', blank=True, null=True)  # Field name made lowercase.
+    logo_size = models.TextField(default='56', blank=True, null=True)
 
     class Meta:
         managed = False
