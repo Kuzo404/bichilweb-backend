@@ -126,6 +126,8 @@ class AboutPageSection(models.Model):
     page = models.ForeignKey(AboutPage, models.DO_NOTHING, db_column='page', blank=True, null=True)
     index = models.SmallIntegerField(blank=True, null=True)
     visible = models.BooleanField(blank=True, null=True)
+    image = models.TextField(blank=True, null=True)
+    image_position = models.TextField(blank=True, null=True, default='right')
     created = models.DateTimeField(blank=True, null=True)
     updated = models.DateTimeField(blank=True, null=True)
 

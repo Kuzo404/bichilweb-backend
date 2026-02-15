@@ -55,10 +55,24 @@ class SectionReadSerializer(serializers.ModelSerializer):
         many=True, read_only=True, source='aboutpagesectiontranslations_set'
     )
     blocks = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    image_position = serializers.SerializerMethodField()
 
     class Meta:
         model = AboutPageSection
-        fields = ("id", "index", "visible", "created", "updated", "translations", "blocks")
+        fields = ("id", "index", "visible", "image", "image_position", "created", "updated", "translations", "blocks")
+
+    def get_image(self, obj):
+        try:
+            return obj.image or ''
+        except Exception:
+            return ''
+
+    def get_image_position(self, obj):
+        try:
+            return obj.image_position or 'right'
+        except Exception:
+            return 'right'
 
     def get_blocks(self, obj):
         blocks = obj.aboutpageblock_set.all().order_by('index')
@@ -113,6 +127,8 @@ class BlockWriteSerializer(serializers.Serializer):
 class SectionWriteSerializer(serializers.Serializer):
     index = serializers.IntegerField(default=0)
     visible = serializers.BooleanField(default=True)
+    image = serializers.CharField(required=False, allow_blank=True, default='')
+    image_position = serializers.CharField(required=False, allow_blank=True, default='right')
     translations = SectionTranslationWriteSerializer(many=True, required=False)
     blocks = BlockWriteSerializer(many=True, required=False)
 
@@ -190,6 +206,8 @@ class AboutPageWriteSerializer(serializers.ModelSerializer):
                 page=page,
                 index=sec_data.get("index", 0),
                 visible=sec_data.get("visible", True),
+                image=sec_data.get("image", ''),
+                image_position=sec_data.get("image_position", 'right'),
                 created=now,
                 updated=now,
             )
