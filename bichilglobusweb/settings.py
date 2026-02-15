@@ -101,9 +101,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 # ============================================================================
 # UPLOAD & MEDIA SETTINGS
 # ============================================================================
-# Файл upload хэмжээний хязгаар (300MB хүртэл)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 314572800  # 300MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 314572800  # 300MB
+# Файл upload хэмжээний хязгаар
+DATA_UPLOAD_MAX_MEMORY_SIZE = 314572800   # 300MB — хүсэлтийн нийт хэмжээ
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760   # 10MB  — үүнээс том файл disk-д temp хадгална (OOM-с хамгаална)
 # Үнэт видео, зураг файлуудыг хүлээн авах
 FILE_UPLOAD_ALLOWED_MIME_TYPES = [
     # Зураг

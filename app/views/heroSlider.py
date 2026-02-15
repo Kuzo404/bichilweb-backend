@@ -48,21 +48,27 @@ class HeroSliderViewSet(ModelViewSet):
         name_without_ext = file_obj.name.rsplit('.', 1)[0] if '.' in file_obj.name else file_obj.name
         folder = f"bichil/hero_slider/{device}"
 
+        # TemporaryUploadedFile бол disk path ашиглах (санах ойд ачаалахгүй)
+        if hasattr(file_obj, 'temporary_file_path'):
+            upload_source = file_obj.temporary_file_path()
+        else:
+            upload_source = file_obj
+
         if is_video:
-            # Видео: upload_large() ашиглан chunk-аар илгээх (20MB chunk)
+            # Видео: upload_large() ашиглан chunk-аар илгээх (6MB chunk → илүү найдвартай)
             result = cloudinary.uploader.upload_large(
-                file_obj,
+                upload_source,
                 resource_type=resource_type,
                 folder=folder,
                 public_id=name_without_ext,
                 overwrite=True,
-                chunk_size=20_000_000,  # 20MB chunk
-                timeout=300,  # 5 минут timeout
+                chunk_size=6_000_000,   # 6MB chunk (найдвартай)
+                timeout=600,            # 10 минут timeout
             )
         else:
             # Зураг: ердийн upload
             result = cloudinary.uploader.upload(
-                file_obj,
+                upload_source,
                 resource_type=resource_type,
                 folder=folder,
                 public_id=name_without_ext,
