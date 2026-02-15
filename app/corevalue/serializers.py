@@ -61,6 +61,8 @@ class DescTranslationWriteSerializer(serializers.Serializer):
 
 
 class CoreValueWriteSerializer(serializers.ModelSerializer):
+    file = serializers.CharField(required=False, allow_null=True, allow_blank=True, default=None)
+    file_ratio = serializers.CharField(required=False, allow_null=True, allow_blank=True, default='16 / 9')
     title_translations = TitleTranslationWriteSerializer(many=True, required=False)
     desc_translations = DescTranslationWriteSerializer(many=True, required=False)
 
