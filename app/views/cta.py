@@ -273,10 +273,17 @@ class CtaViewSet(ModelViewSet):
             # Cloudinary дээрх файлыг устгах
             self._delete_from_cloudinary(instance.file)
             
+            # FK constraint-тай child record-уудыг эхлээд устгах
+            # (DB-д CASCADE байхгүй тул гараар устгана)
+            CtaTitle.objects.filter(cta=instance).delete()
+            CtaSubtitle.objects.filter(cta=instance).delete()
+            
             self.perform_destroy(instance)
             return Response(status=status.HTTP_204_NO_CONTENT)
             
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
