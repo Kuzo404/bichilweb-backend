@@ -48,6 +48,9 @@ class FooterReadSerializer(serializers.ModelSerializer):
     
     def get_logo_url(self, obj):
         if obj.logo:
+            # Cloudinary URL-г шууд буцаана
+            if obj.logo.startswith('http://') or obj.logo.startswith('https://'):
+                return obj.logo
             file_path = obj.logo.replace('media/', '').replace('footer/', '')
             return f'/media/footer/{file_path}'
         return None

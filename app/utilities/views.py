@@ -611,14 +611,33 @@ class FooterViewSet(viewsets.ModelViewSet):
         data = read_serializer.data
         
         if instance.logo:
-            clean_filename = instance.logo.replace('media/', '').replace('footer/', '')
-            image_path = os.path.join(settings.MEDIA_ROOT, 'footer', clean_filename)
-            if os.path.exists(image_path):
+            # Cloudinary URL бол Cloudinary-с устгана
+            if 'cloudinary.com' in str(instance.logo):
                 try:
-                    os.remove(image_path)
-                    print(f"✅ Logo deleted: {clean_filename}")
+                    import re
+                    import cloudinary
+                    import cloudinary.uploader
+                    cloudinary.config(
+                        cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+                        api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
+                        api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
+                    )
+                    match = re.search(r'/upload/v\d+/(.+)$', instance.logo)
+                    if match:
+                        public_id = match.group(1).rsplit('.', 1)[0]
+                        cloudinary.uploader.destroy(public_id, resource_type='image')
+                        print(f'✅ Cloudinary footer logo deleted: {public_id}')
                 except Exception as e:
-                    print(f"❌ Error deleting logo: {e}")
+                    print(f'❌ Cloudinary footer delete error: {e}')
+            else:
+                clean_filename = instance.logo.replace('media/', '').replace('footer/', '')
+                image_path = os.path.join(settings.MEDIA_ROOT, 'footer', clean_filename)
+                if os.path.exists(image_path):
+                    try:
+                        os.remove(image_path)
+                        print(f'✅ Logo deleted: {clean_filename}')
+                    except Exception as e:
+                        print(f'❌ Error deleting logo: {e}')
         
         instance.delete()
         

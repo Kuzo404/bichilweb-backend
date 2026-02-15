@@ -1,8 +1,16 @@
+import re
+import json
 from rest_framework import serializers
-from app.models.models import Footer, FooterSocials, FooterUrls
-import os, json
 from django.conf import settings
-import uuid
+import cloudinary
+import cloudinary.uploader
+from app.models.models import Footer, FooterSocials, FooterUrls
+
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
+)
 
 class FooterSocialsWriteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,7 +27,7 @@ class FooterUrlsWriteSerializer(serializers.ModelSerializer):
 class FooterWriteSerializer(serializers.ModelSerializer):
     socials = FooterSocialsWriteSerializer(many=True, required=False)
     urls = FooterUrlsWriteSerializer(many=True, required=False)
-    logo = serializers.ImageField(required=False, allow_null=True, write_only=True)
+    logo = serializers.FileField(required=False, allow_null=True, write_only=True)
     
     class Meta:
         model = Footer
@@ -68,30 +76,38 @@ class FooterWriteSerializer(serializers.ModelSerializer):
         
         return super().to_internal_value(plain_data)
     
-    def _save_image(self, image_file):
-        upload_dir = os.path.join(settings.MEDIA_ROOT, 'footer')
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        ext = os.path.splitext(image_file.name)[1].lower()
-        filename = f"{uuid.uuid4()}{ext}"
-        
-        filepath = os.path.join(upload_dir, filename)
-        with open(filepath, 'wb+') as destination:
-            for chunk in image_file.chunks():
-                destination.write(chunk)
-        
-        return filename
-    
-    def _delete_image(self, filename):
-        if filename:
-            clean_filename = filename.replace('media/', '').replace('footer/', '')
-            image_path = os.path.join(settings.MEDIA_ROOT, 'footer', clean_filename)
-            if os.path.exists(image_path):
-                try:
-                    os.remove(image_path)
-                    print(f"✅ Image deleted: {clean_filename}")
-                except Exception as e:
-                    print(f"❌ Error deleting image: {e}")
+    def _upload_to_cloudinary(self, file_obj):
+        """Cloudinary дээр зураг upload хийнэ."""
+        name_without_ext = file_obj.name.rsplit('.', 1)[0] if '.' in file_obj.name else file_obj.name
+        folder = 'bichil/footer'
+        if hasattr(file_obj, 'temporary_file_path'):
+            upload_source = file_obj.temporary_file_path()
+        else:
+            upload_source = file_obj
+        result = cloudinary.uploader.upload(
+            upload_source,
+            resource_type='image',
+            folder=folder,
+            public_id=name_without_ext,
+            overwrite=True,
+            quality='auto',
+            fetch_format='auto',
+        )
+        return result['secure_url']
+
+    def _delete_from_cloudinary(self, url):
+        """Cloudinary URL-с public_id гаргаж устгана."""
+        if not url or 'cloudinary.com' not in str(url):
+            return
+        try:
+            match = re.search(r'/upload/v\d+/(.+)$', url)
+            if not match:
+                return
+            public_id = match.group(1).rsplit('.', 1)[0]
+            cloudinary.uploader.destroy(public_id, resource_type='image')
+            print(f'✅ Cloudinary footer logo deleted: {public_id}')
+        except Exception as e:
+            print(f'❌ Cloudinary footer delete error: {e}')
     
     def create(self, validated_data):
         socials_data = validated_data.pop('socials', [])
@@ -99,9 +115,9 @@ class FooterWriteSerializer(serializers.ModelSerializer):
         logo_file = validated_data.pop('logo', None)
         
         if logo_file:
-            filename = self._save_image(logo_file)
-            validated_data['logo'] = filename
-            print(f"✅ Logo saved: {filename}")
+            cloudinary_url = self._upload_to_cloudinary(logo_file)
+            validated_data['logo'] = cloudinary_url
+            print(f'✅ Footer logo uploaded: {cloudinary_url}')
         
         footer = Footer.objects.create(**validated_data)
         
@@ -121,10 +137,10 @@ class FooterWriteSerializer(serializers.ModelSerializer):
         
         if logo_file:
             if instance.logo:
-                self._delete_image(instance.logo)
-            filename = self._save_image(logo_file)
-            validated_data['logo'] = filename
-            print(f"✅ Logo updated: {filename}")
+                self._delete_from_cloudinary(instance.logo)
+            cloudinary_url = self._upload_to_cloudinary(logo_file)
+            validated_data['logo'] = cloudinary_url
+            print(f'✅ Footer logo updated: {cloudinary_url}')
         
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
