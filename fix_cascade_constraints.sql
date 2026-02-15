@@ -44,3 +44,46 @@ ALTER TABLE header_menu
 ALTER TABLE header_menu
   ADD CONSTRAINT header_menu_header_fkey
   FOREIGN KEY (header) REFERENCES header(id) ON DELETE CASCADE;
+
+-- ============================================================================
+-- header_style хүснэгтэд дутуу багануудыг нэмэх
+-- max_width болон logo_size нь шинээр нэмэгдсэн тул production DB-д байхгүй
+-- IF NOT EXISTS ашиглан аль хэдийн байгаа бол давтахгүй
+-- ============================================================================
+
+-- 7. max_width багана нэмэх (header-ийн max-width тохиргоо)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'header_style' AND column_name = 'max_width'
+    ) THEN
+        ALTER TABLE header_style ADD COLUMN max_width TEXT DEFAULT '1240px';
+        RAISE NOTICE 'max_width багана нэмэгдлээ';
+    ELSE
+        RAISE NOTICE 'max_width багана аль хэдийн байна';
+    END IF;
+END $$;
+
+-- 8. logo_size багана нэмэх (логоны хэмжээ тохиргоо)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'header_style' AND column_name = 'logo_size'
+    ) THEN
+        ALTER TABLE header_style ADD COLUMN logo_size SMALLINT DEFAULT 44;
+        RAISE NOTICE 'logo_size багана нэмэгдлээ';
+    ELSE
+        RAISE NOTICE 'logo_size багана аль хэдийн байна';
+    END IF;
+END $$;
+
+-- ============================================================================
+-- header_logo_history хүснэгт үүсгэх (логоны түүхийг DB-д хадгалах)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS header_logo_history (
+    id BIGSERIAL PRIMARY KEY,
+    url TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
