@@ -44,7 +44,7 @@ class AppDownloadReadSerializer(serializers.ModelSerializer):
 class AppDownloadWriteSerializer(serializers.ModelSerializer):
     titles = AppDownloadTitleSerializer(many=True, required=False)
     lists = AppDownloadListItemSerializer(many=True, required=False)
-    image_file = serializers.ImageField(required=False, write_only=True)
+    image_file = serializers.FileField(required=False, write_only=True)
 
     class Meta:
         model = AppDownload
