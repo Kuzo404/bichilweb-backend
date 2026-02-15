@@ -125,7 +125,7 @@ FILE_UPLOAD_ALLOWED_MIME_TYPES = [
 # ============================================================================
 # Зураг, видео нуу бүх media файлуудыг Cloudinary дээр хадгалах
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default='bichil'),
+    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default='ddkarwynp'),
     'API_KEY': env('CLOUDINARY_API_KEY', default=''),
     'API_SECRET': env('CLOUDINARY_API_SECRET', default=''),
 }
@@ -141,7 +141,7 @@ if not CLOUDINARY_STORAGE['API_KEY']:
         raise ValueError(
             "❌ CLOUDINARY_API_KEY environment variable идэвхгүй байна!\n"
             "Render Settings → Environment Variables дээр дараах хувьсагчуудыг нэмнэ үү:\n"
-            "  - CLOUDINARY_CLOUD_NAME=bichil\n"
+            "  - CLOUDINARY_CLOUD_NAME=ddkarwynp\n"
             "  - CLOUDINARY_API_KEY=114548364694963\n"
             "  - CLOUDINARY_API_SECRET=4T8kJhdnvGzyHKnPzxwBKl7xU30\n"
             "See: https://console.cloudinary.com"

@@ -10,19 +10,25 @@ class HeroSliderSerializer(serializers.ModelSerializer):
     class Meta:
         model = HeroSlider
         fields = "__all__" 
-        
+
+    def _build_url(self, value):
+        """
+        Cloudinary URL байвал шууд буцаана.
+        Хуучин local path байвал absolute URL үүсгэнэ.
+        """
+        if not value:
+            return None
+        # Cloudinary эсвэл бусад full URL
+        if value.startswith('http://') or value.startswith('https://'):
+            return value
+        # Хуучин local path (media/hero_sliders/...)
+        return self.context['request'].build_absolute_uri('/' + value)
 
     def get_file_url(self, obj):
-        if obj.file:
-            return self.context['request'].build_absolute_uri('/' + obj.file)
-        return None
+        return self._build_url(obj.file)
 
     def get_tablet_file_url(self, obj):
-        if obj.tablet_file:
-            return self.context['request'].build_absolute_uri('/' + obj.tablet_file)
-        return None
+        return self._build_url(obj.tablet_file)
 
     def get_mobile_file_url(self, obj):
-        if obj.mobile_file:
-            return self.context['request'].build_absolute_uri('/' + obj.mobile_file)
-        return None
+        return self._build_url(obj.mobile_file)
