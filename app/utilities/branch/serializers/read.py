@@ -29,6 +29,10 @@ class BranchesReadSerializer(serializers.ModelSerializer):
     
     def get_image_url(self, obj):
         if obj.image:
+            # If it's already a full Cloudinary URL, return as-is
+            if obj.image.startswith('http'):
+                return obj.image
+            # Legacy local file fallback
             file_path = obj.image.replace('media/', '').replace('branches/', '')
             return f'/media/branches/{file_path}'
         return None

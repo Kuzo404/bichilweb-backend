@@ -1,9 +1,17 @@
 from rest_framework import serializers
 from app.models.models import Branches, BranchPhone, BranchCategory
 import json
-import os
+import re
+import cloudinary
+import cloudinary.uploader
 from django.conf import settings
-import uuid
+
+# Cloudinary config
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
+)
 
 
 class BranchesWriteSerializer(serializers.ModelSerializer):
@@ -39,30 +47,41 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
         except json.JSONDecodeError:
             raise serializers.ValidationError("Invalid JSON format for phones")
     
-    def _save_image(self, image_file):
-        upload_dir = os.path.join(settings.MEDIA_ROOT, 'branches')
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        ext = os.path.splitext(image_file.name)[1].lower()
-        filename = f"{uuid.uuid4()}{ext}"
-        
-        filepath = os.path.join(upload_dir, filename)
-        with open(filepath, 'wb+') as destination:
-            for chunk in image_file.chunks():
-                destination.write(chunk)
-        
-        return filename  
+    def _upload_to_cloudinary(self, image_file):
+        """Upload image to Cloudinary and return the secure URL."""
+        name_without_ext = image_file.name.rsplit('.', 1)[0] if '.' in image_file.name else image_file.name
+        folder = "bichil/branches"
+
+        if hasattr(image_file, 'temporary_file_path'):
+            upload_source = image_file.temporary_file_path()
+        else:
+            upload_source = image_file
+
+        result = cloudinary.uploader.upload(
+            upload_source,
+            resource_type='image',
+            folder=folder,
+            public_id=name_without_ext,
+            overwrite=True,
+            quality='auto',
+            fetch_format='auto',
+        )
+        return result['secure_url']
     
-    def _delete_image(self, filename):
-        if filename:
-            clean_filename = filename.replace('media/', '').replace('branches/', '')
-            image_path = os.path.join(settings.MEDIA_ROOT, 'branches', clean_filename)
-            if os.path.exists(image_path):
-                try:
-                    os.remove(image_path)
-                    print(f"✅ Image deleted: {clean_filename}")
-                except Exception as e:
-                    print(f"❌ Error deleting image: {e}")
+    def _delete_from_cloudinary(self, url):
+        """Delete image from Cloudinary by URL."""
+        if not url or 'cloudinary.com' not in str(url):
+            return
+        try:
+            match = re.search(r'/upload/v\d+/(.+)$', url)
+            if not match:
+                return
+            public_id_with_ext = match.group(1)
+            public_id = public_id_with_ext.rsplit('.', 1)[0]
+            cloudinary.uploader.destroy(public_id, resource_type='image')
+            print(f"✅ Branch Cloudinary image deleted: {public_id}")
+        except Exception as e:
+            print(f"❌ Branch Cloudinary delete error: {e}")
     
     def create(self, validated_data):
         phones_data = validated_data.pop('phones')
@@ -70,9 +89,9 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
         category_id = validated_data.pop('category_id', None)
         
         if image_file:
-            filename = self._save_image(image_file)
-            validated_data['image'] = filename
-            print(f"✅ Image saved: {filename}")
+            cloudinary_url = self._upload_to_cloudinary(image_file)
+            validated_data['image'] = cloudinary_url
+            print(f"✅ Branch image uploaded to Cloudinary: {cloudinary_url}")
         
         if category_id:
             try:
@@ -94,11 +113,12 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
         category_id = validated_data.pop('category_id', None)
         
         if image_file:
+            # Delete old Cloudinary image
             if instance.image:
-                self._delete_image(instance.image)
-            filename = self._save_image(image_file)
-            validated_data['image'] = filename
-            print(f"✅ Image updated: {filename}")
+                self._delete_from_cloudinary(instance.image)
+            cloudinary_url = self._upload_to_cloudinary(image_file)
+            validated_data['image'] = cloudinary_url
+            print(f"✅ Branch image updated on Cloudinary: {cloudinary_url}")
         
         instance.name = validated_data.get('name', instance.name)
         instance.location = validated_data.get('location', instance.location)

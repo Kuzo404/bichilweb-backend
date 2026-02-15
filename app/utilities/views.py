@@ -312,7 +312,21 @@ class BranchesViewSet(viewsets.ModelViewSet):
         read_serializer = BranchesReadSerializer(instance)
         data = read_serializer.data
         
-        if instance.image:
+        # Delete Cloudinary image if exists
+        if instance.image and 'cloudinary.com' in str(instance.image):
+            import re
+            import cloudinary
+            import cloudinary.uploader
+            try:
+                match = re.search(r'/upload/v\d+/(.+)$', instance.image)
+                if match:
+                    public_id = match.group(1).rsplit('.', 1)[0]
+                    cloudinary.uploader.destroy(public_id, resource_type='image')
+                    print(f"✅ Branch Cloudinary image deleted on destroy")
+            except Exception as e:
+                print(f"❌ Branch Cloudinary delete error on destroy: {e}")
+        elif instance.image:
+            # Legacy local file cleanup
             clean_filename = instance.image.replace('media/', '').replace('branches/', '')
             image_path = os.path.join(settings.MEDIA_ROOT, 'branches', clean_filename)
             if os.path.exists(image_path):
