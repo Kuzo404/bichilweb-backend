@@ -22,8 +22,10 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branches
         fields = [
-            "id", "name", "name_en", "location", "image", "area", "city", 
-            "district", "open", "time", "latitude", "longitude", "phones",
+            "id", "name", "name_en", "location", "location_en", "image",
+            "area", "area_en", "city", "city_en",
+            "district", "district_en", "open", "open_en", "time",
+            "latitude", "longitude", "phones",
             "category_id"
         ]
     
@@ -123,10 +125,15 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.name_en = validated_data.get('name_en', instance.name_en)
         instance.location = validated_data.get('location', instance.location)
+        instance.location_en = validated_data.get('location_en', instance.location_en)
         instance.area = validated_data.get('area', instance.area)
+        instance.area_en = validated_data.get('area_en', instance.area_en)
         instance.city = validated_data.get('city', instance.city)
+        instance.city_en = validated_data.get('city_en', instance.city_en)
         instance.district = validated_data.get('district', instance.district)
+        instance.district_en = validated_data.get('district_en', instance.district_en)
         instance.open = validated_data.get('open', instance.open)
+        instance.open_en = validated_data.get('open_en', instance.open_en)
         instance.time = validated_data.get('time', instance.time)
         instance.latitude = validated_data.get('latitude', instance.latitude)
         instance.longitude = validated_data.get('longitude', instance.longitude)

@@ -23,8 +23,10 @@ class BranchesReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branches
         fields = [
-            "id", "name", "name_en", "location", "image", "image_url", "area", "city", 
-            "district", "open", "time", "latitude", "longitude", "phones",
+            "id", "name", "name_en", "location", "location_en", "image", "image_url",
+            "area", "area_en", "city", "city_en",
+            "district", "district_en", "open", "open_en", "time",
+            "latitude", "longitude", "phones",
             "category_id", "category_name", "category_name_en"
         ]
     
@@ -63,8 +65,10 @@ class BranchPageSettingsSerializer(serializers.ModelSerializer):
         fields = [
             "id", "popup_bg", "popup_title_color", "popup_text_color",
             "popup_icon_color", "popup_btn_bg", "popup_btn_text", "popup_btn_label",
+            "popup_btn_label_en",
             "card_bg", "card_border", "card_title_color", "card_text_color",
             "card_icon_color", "card_btn_bg", "card_btn_text", "card_btn_label",
+            "card_btn_label_en",
             "marker_color", "marker_selected_color",
-            "map_btn_bg", "map_btn_text", "map_btn_label"
+            "map_btn_bg", "map_btn_text", "map_btn_label", "map_btn_label_en"
         ]
