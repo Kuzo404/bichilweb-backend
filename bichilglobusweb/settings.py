@@ -70,6 +70,12 @@ DATABASES = {
     }
 }
 
+# Render PostgreSQL руу SSL холболт (external холболтод шаардлагатай)
+if 'render.com' in env("DB_HOST", default=""):
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+    }
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
