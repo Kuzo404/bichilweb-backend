@@ -10,9 +10,17 @@ from rest_framework.response import Response
 from rest_framework import status
 import cloudinary
 import cloudinary.uploader
+from django.conf import settings
 
 from app.models.models import HeroSlider
 from app.serializers.heroSlider import HeroSliderSerializer
+
+# Settings.py-д config хийсэн ч дахин баталгаажуулах (cloud_name буруу болох case-с хамгаалах)
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
+)
 
 
 class HeroSliderViewSet(ModelViewSet):

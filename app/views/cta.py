@@ -12,9 +12,17 @@ from rest_framework import status
 import json
 import cloudinary
 import cloudinary.uploader
+from django.conf import settings
 
 from app.models.models import Cta, CtaTitle, CtaSubtitle
 from app.serializers.cta import CtaSerializer
+
+# Settings.py-д config хийсэн ч дахин баталгаажуулах
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
+)
 
 
 class CtaViewSet(ModelViewSet):
