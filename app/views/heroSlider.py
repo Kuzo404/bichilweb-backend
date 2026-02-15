@@ -20,8 +20,8 @@ class HeroSliderViewSet(ModelViewSet):
     serializer_class = HeroSliderSerializer
     parser_classes = [MultiPartParser, FormParser]
 
-    # Видео хамгийн их хэмжээ (100MB = ~2 минут MP4)
-    MAX_VIDEO_SIZE = 100 * 1024 * 1024  # 100MB
+    # Видео хамгийн их хэмжээ (300MB)
+    MAX_VIDEO_SIZE = 300 * 1024 * 1024  # 300MB
 
     # ─── Cloudinary helper: upload ────────────────────────────────
     def _upload_to_cloudinary(self, file_obj, device='desktop'):

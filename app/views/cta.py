@@ -1,15 +1,17 @@
 # =============================================================================
-# VIEWSET - Updated to handle Language object
+# VIEWSET - CTA Slider (Cloudinary дээр хадгална)
 # =============================================================================
 # app/views/cta.py
 
+import re
+import mimetypes
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework import status
-import os
 import json
-import time
+import cloudinary
+import cloudinary.uploader
 
 from app.models.models import Cta, CtaTitle, CtaSubtitle
 from app.serializers.cta import CtaSerializer
@@ -19,6 +21,47 @@ class CtaViewSet(ModelViewSet):
     queryset = Cta.objects.all().order_by('index')
     serializer_class = CtaSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    # ─── Cloudinary helpers ───────────────────────────────────────
+    def _upload_to_cloudinary(self, file_obj):
+        """Файлыг Cloudinary дээр upload хийнэ. Буцаах: secure_url"""
+        mime_type, _ = mimetypes.guess_type(file_obj.name)
+        if not mime_type:
+            mime_type = file_obj.content_type or 'application/octet-stream'
+
+        resource_type = 'image'
+        name_without_ext = file_obj.name.rsplit('.', 1)[0] if '.' in file_obj.name else file_obj.name
+
+        result = cloudinary.uploader.upload(
+            file_obj,
+            resource_type=resource_type,
+            folder='bichil/cta',
+            public_id=name_without_ext,
+            overwrite=True,
+            quality='auto',
+            fetch_format='auto',
+        )
+        return result['secure_url']
+
+    def _delete_from_cloudinary(self, url):
+        """Cloudinary URL-с файлыг устгах"""
+        if not url or 'cloudinary.com' not in url:
+            return  # Cloudinary биш URL (хуучин local файл)
+
+        try:
+            if '/video/upload/' in url:
+                resource_type = 'video'
+            else:
+                resource_type = 'image'
+
+            match = re.search(r'/upload/v\d+/(.+)$', url)
+            if not match:
+                return
+
+            public_id = match.group(1).rsplit('.', 1)[0]
+            cloudinary.uploader.destroy(public_id, resource_type=resource_type)
+        except Exception as e:
+            print(f"[CTA] Cloudinary delete алдаа: {e}")
 
     def create(self, request, *args, **kwargs):
         """Create new CTA slide"""
@@ -32,8 +75,7 @@ class CtaViewSet(ModelViewSet):
             data['url'] = request.data.get('url', '')
             if 'file' in request.FILES:
                 file = request.FILES['file']
-                save_path = self._save_file(file)
-                data['file'] = save_path
+                data['file'] = self._upload_to_cloudinary(file)
             else:
                 return Response(
                     {'error': 'File is required'},
@@ -137,12 +179,10 @@ class CtaViewSet(ModelViewSet):
             if 'file' in request.FILES:
                 file = request.FILES['file']
                 
-                # Хуучин файлыг устгах
-                if instance.file and os.path.exists(instance.file):
-                    os.remove(instance.file)
+                # Хуучин файлыг Cloudinary-с устгах
+                self._delete_from_cloudinary(instance.file)
                 
-                save_path = self._save_file(file)
-                data['file'] = save_path
+                data['file'] = self._upload_to_cloudinary(file)
             else:
                 data['file'] = instance.file
             
@@ -222,9 +262,8 @@ class CtaViewSet(ModelViewSet):
         try:
             instance = self.get_object()
             
-            # Файл устгах
-            if instance.file and os.path.exists(instance.file):
-                os.remove(instance.file)
+            # Cloudinary дээрх файлыг устгах
+            self._delete_from_cloudinary(instance.file)
             
             self.perform_destroy(instance)
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -235,23 +274,6 @@ class CtaViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def _save_file(self, file):
-        """Save uploaded file and return path"""
-        save_folder = 'media/cta_files'
-        os.makedirs(save_folder, exist_ok=True)
-        
-        timestamp = str(int(time.time() * 1000))
-        ext = os.path.splitext(file.name)[1]
-        filename = f"cta_{timestamp}{ext}"
-        
-        save_path = os.path.join(save_folder, filename)
-        
-        with open(save_path, 'wb+') as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
-        
-        return save_path.replace('\\', '/')
-    
     def _has_language_model(self):
         """Check if Language model exists"""
         try:

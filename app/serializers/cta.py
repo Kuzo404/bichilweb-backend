@@ -74,7 +74,10 @@ class CtaSerializer(serializers.ModelSerializer):
     def get_file_url(self, obj):
         """Return full URL for file"""
         if obj.file:
-            # Remove 'media/' prefix if it exists
+            # Cloudinary URL байвал шууд буцаах
+            if obj.file.startswith('http://') or obj.file.startswith('https://'):
+                return obj.file
+            # Хуучин local path
             file_path = obj.file.replace('media/', '')
             return f'/media/{file_path}'
         return None
@@ -144,6 +147,8 @@ class CtaSerializerAlternative(serializers.ModelSerializer):
 
     def get_file_url(self, obj):
         if obj.file:
+            if obj.file.startswith('http://') or obj.file.startswith('https://'):
+                return obj.file
             file_path = obj.file.replace('media/', '')
             return f'/media/{file_path}'
         return None
