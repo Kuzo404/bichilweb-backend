@@ -1,4 +1,6 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.db.models import Q
 from app.models.models import HeaderMenu
 from app.serializers.headersMenu import HeaderMenuSerializer
@@ -22,3 +24,12 @@ class HeaderMenuViewSet(viewsets.ModelViewSet):
                 pass
         
         return queryset
+
+    @action(detail=False, methods=['delete'])
+    def bulk_delete(self, request):
+        """Delete all menus for a given header_id. CASCADE handles submenus & tertiary."""
+        header_id = request.query_params.get('header_id')
+        if not header_id:
+            return Response({'error': 'header_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        deleted_count, _ = HeaderMenu.objects.filter(header_id=int(header_id)).delete()
+        return Response({'deleted': deleted_count}, status=status.HTTP_200_OK)
