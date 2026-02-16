@@ -40,6 +40,7 @@ class NewsWriteSerializer(serializers.ModelSerializer):
             "category",
             "image",
             "video",
+            "video_orientation",
             "feature",
             "render",
             "show_on_home",

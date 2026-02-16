@@ -84,6 +84,7 @@ class NewsReadSerializer(serializers.ModelSerializer):
             "image",
             "image_url",
             "video",
+            "video_orientation",
             "feature",
             "render",
             "show_on_home",

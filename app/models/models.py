@@ -970,6 +970,7 @@ class News(models.Model):
     category = models.ForeignKey('NewsCategory', models.DO_NOTHING, db_column='category', blank=True, null=True)
     image = models.TextField(blank=True, null=True)
     video = models.TextField(blank=True, null=True)
+    video_orientation = models.TextField(blank=True, null=True, default='horizontal')
     feature = models.BooleanField(blank=True, null=True)
     render = models.BooleanField(blank=True, null=True)
     show_on_home = models.BooleanField(blank=True, null=True, default=False)
