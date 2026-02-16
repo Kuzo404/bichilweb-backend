@@ -792,7 +792,9 @@ class FloatMenuViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     print(f"❌ Error deleting FloatMenu image: {e}")
         
-        # Delete all submenu files
+        # Delete all submenu files and related DB records
+        # Must delete in order: translations → submenus → menu translations → menu
+        # Because FK uses DO_NOTHING, Django won't cascade automatically
         for submenu in instance.floatmenusubmenus_set.all():
             if submenu.file:
                 clean_filename = submenu.file.replace('media/', '').replace('float_menu/', '').replace('submenus/', '')
@@ -803,7 +805,15 @@ class FloatMenuViewSet(viewsets.ModelViewSet):
                         print(f"✅ Submenu file deleted: {clean_filename}")
                     except Exception as e:
                         print(f"❌ Error deleting submenu file: {e}")
+            # Delete submenu translations first (FK → submenu)
+            submenu.floatmenusubmenustranslations_set.all().delete()
+            # Then delete the submenu itself
+            submenu.delete()
         
+        # Delete float menu translations (FK → float_menu)
+        instance.floatmenutranslations_set.all().delete()
+        
+        # Finally delete the float menu itself
         instance.delete()
         
         return Response(
