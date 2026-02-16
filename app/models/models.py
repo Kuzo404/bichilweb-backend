@@ -637,6 +637,19 @@ class FloatMenuTranslations(models.Model):
         db_table = 'float_menu_translations'
 
 
+class FloatMenuSocials(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    platform = models.TextField(blank=True, null=True)
+    url = models.TextField(blank=True, null=True)
+    hover_color = models.TextField(default='#0d9488', blank=True, null=True)
+    sort_order = models.SmallIntegerField(default=0, blank=True, null=True)
+    active = models.BooleanField(default=True, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'float_menu_socials'
+
+
 class Font(models.Model):
     id = models.BigIntegerField(primary_key=True)
     font = models.TextField(blank=True, null=True)

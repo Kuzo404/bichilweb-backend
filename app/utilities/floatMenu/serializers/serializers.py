@@ -1,8 +1,15 @@
 from rest_framework import serializers
-from app.models.models import FloatMenu, FloatMenuSubmenus, FloatMenuSubmenusTranslations, FloatMenuTranslations, Language
+from app.models.models import FloatMenu, FloatMenuSubmenus, FloatMenuSubmenusTranslations, FloatMenuTranslations, FloatMenuSocials, Language
 import os
 from django.conf import settings
 import uuid
+
+
+class FloatMenuSocialsSerializer(serializers.ModelSerializer):
+    """Serializer for FloatMenu social links"""
+    class Meta:
+        model = FloatMenuSocials
+        fields = ['id', 'platform', 'url', 'hover_color', 'sort_order', 'active']
 
 class FloatMenuTranslationsReadSerializer(serializers.ModelSerializer):
     """Serializer for reading FloatMenu translations"""

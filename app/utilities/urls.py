@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from app.utilities.views import CollateralViewSet, ConditionViewSet, DocumentViewSet, PagesViewSet, BranchesViewSet, BranchCategoryViewSet, BranchPageSettingsViewSet, HrPolicyViewSet, JobViewSet, FooterViewSet, FloatMenuViewSet, FloatMenuSubmenuViewSet
+from app.utilities.views import CollateralViewSet, ConditionViewSet, DocumentViewSet, PagesViewSet, BranchesViewSet, BranchCategoryViewSet, BranchPageSettingsViewSet, HrPolicyViewSet, JobViewSet, FooterViewSet, FloatMenuViewSet, FloatMenuSubmenuViewSet, FloatMenuSocialsViewSet
 
 router = DefaultRouter()
 
@@ -15,5 +15,6 @@ router.register(r"jobs", JobViewSet, basename="jobs")
 router.register(r"footer", FooterViewSet, basename="footer")
 router.register(r"float-menu", FloatMenuViewSet, basename="floatmenu")
 router.register(r"float-submenu", FloatMenuSubmenuViewSet, basename="floatsubmenu")
+router.register(r"float-menu-socials", FloatMenuSocialsViewSet, basename="floatmenusocials")
 
 urlpatterns = router.urls

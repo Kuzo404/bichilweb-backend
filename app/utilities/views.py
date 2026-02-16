@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from app.models.models import Document, Collateral, Conditions, Pages, Branches, BranchCategory, BranchPageSettings, HrPolicy, JobTranslations, Jobs, Footer, FloatMenu, FloatMenuSubmenus
+from app.models.models import Document, Collateral, Conditions, Pages, Branches, BranchCategory, BranchPageSettings, HrPolicy, JobTranslations, Jobs, Footer, FloatMenu, FloatMenuSubmenus, FloatMenuSocials
 from app.utilities.document.serializers.read import DocumentReadSerializer
 from app.utilities.document.serializers.write import DocumentWriteSerializer
 from app.utilities.collateral.serializers.read import CollateralReadSerializer
@@ -25,7 +25,8 @@ from app.utilities.floatMenu.serializers.serializers import ( FloatMenuReadSeria
     FloatMenuWriteSerializer,
     FloatMenuSubmenusReadSerializer,
     FloatMenuSubmenuCreateSerializer,
-    FloatMenuSubmenuUpdateSerializer)
+    FloatMenuSubmenuUpdateSerializer,
+    FloatMenuSocialsSerializer)
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -971,3 +972,52 @@ class FloatMenuSubmenuViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK
         )
+
+
+class FloatMenuSocialsViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing floating menu social links"""
+    queryset = FloatMenuSocials.objects.all().order_by('sort_order')
+    serializer_class = FloatMenuSocialsSerializer
+    parser_classes = (JSONParser,)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response({"message": "Social link устгагдлаа"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['put'])
+    def bulk_update(self, request):
+        """Replace all social links at once (delete all + recreate)"""
+        socials_data = request.data if isinstance(request.data, list) else request.data.get('socials', [])
+        
+        # Delete all existing
+        FloatMenuSocials.objects.all().delete()
+        
+        # Create new ones
+        created = []
+        for item in socials_data:
+            serializer = self.get_serializer(data=item)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            created.append(serializer.data)
+        
+        return Response(created, status=status.HTTP_200_OK)
