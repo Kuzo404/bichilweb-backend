@@ -64,6 +64,12 @@ class NewsCategoryViewSet(viewsets.ModelViewSet):
         read_serializer = NewsCategoryReadSerializer(instance)
         data = read_serializer.data
         
+        # Delete translations first (models use DO_NOTHING, DB has FK constraints)
+        instance.newscategorytranslations_set.all().delete()
+        
+        # Check if any news uses this category — set to null instead of blocking
+        News.objects.filter(category=instance).update(category=None)
+        
         instance.delete()
         
         return Response(
@@ -155,6 +161,13 @@ class NewsViewSet(viewsets.ModelViewSet):
                         print(f"\u2705 News additional image deleted from Cloudinary: {public_id}")
                 except Exception as e:
                     print(f"\u274c News Cloudinary additional image delete error: {e}")
+        
+        # Manually delete all related records (models use DO_NOTHING, DB has FK constraints)
+        instance.newstitletranslations_set.all().delete()
+        instance.newsshortdesctranslations_set.all().delete()
+        instance.newscontenttranslations_set.all().delete()
+        instance.newsimages_set.all().delete()
+        instance.newssocials_set.all().delete()
         
         instance.delete()
         
