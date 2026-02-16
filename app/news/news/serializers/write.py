@@ -229,8 +229,11 @@ class NewsWriteSerializer(serializers.ModelSerializer):
         
         instance.save()
 
-        # Update related objects - Images
+        # Update related objects - Images (delete old Cloudinary images first)
         if images_data is not None:
+            for old_img in instance.newsimages_set.all():
+                if old_img.image and 'cloudinary.com' in str(old_img.image):
+                    self._delete_from_cloudinary(old_img.image)
             instance.newsimages_set.all().delete()
             for image_data in images_data:
                 NewsImages.objects.create(news=instance, **image_data)

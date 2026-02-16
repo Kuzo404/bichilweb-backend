@@ -130,7 +130,7 @@ class NewsViewSet(viewsets.ModelViewSet):
         read_serializer = NewsReadSerializer(instance)
         data = read_serializer.data
         
-        # Delete image from Cloudinary if it's a Cloudinary URL
+        # Delete main image from Cloudinary
         if instance.image:
             if 'cloudinary.com' in str(instance.image):
                 try:
@@ -139,9 +139,22 @@ class NewsViewSet(viewsets.ModelViewSet):
                         public_id_with_ext = match.group(1)
                         public_id = public_id_with_ext.rsplit('.', 1)[0]
                         cloudinary.uploader.destroy(public_id, resource_type='image')
-                        print(f"\u2705 News Cloudinary image deleted: {public_id}")
+                        print(f"\u2705 News main image deleted from Cloudinary: {public_id}")
                 except Exception as e:
                     print(f"\u274c News Cloudinary delete error: {e}")
+        
+        # Delete additional images from Cloudinary
+        for img in instance.newsimages_set.all():
+            if img.image and 'cloudinary.com' in str(img.image):
+                try:
+                    match = re.search(r'/upload/v\d+/(.+)$', img.image)
+                    if match:
+                        public_id_with_ext = match.group(1)
+                        public_id = public_id_with_ext.rsplit('.', 1)[0]
+                        cloudinary.uploader.destroy(public_id, resource_type='image')
+                        print(f"\u2705 News additional image deleted from Cloudinary: {public_id}")
+                except Exception as e:
+                    print(f"\u274c News Cloudinary additional image delete error: {e}")
         
         instance.delete()
         
