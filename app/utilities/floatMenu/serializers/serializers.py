@@ -9,7 +9,7 @@ class FloatMenuSocialsSerializer(serializers.ModelSerializer):
     """Serializer for FloatMenu social links"""
     class Meta:
         model = FloatMenuSocials
-        fields = ['id', 'platform', 'url', 'hover_color', 'sort_order', 'active']
+        fields = ['id', 'float_menu', 'platform', 'url', 'hover_color', 'sort_order', 'active']
 
 class FloatMenuTranslationsReadSerializer(serializers.ModelSerializer):
     """Serializer for reading FloatMenu translations"""

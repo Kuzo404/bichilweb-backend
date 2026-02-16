@@ -639,6 +639,7 @@ class FloatMenuTranslations(models.Model):
 
 class FloatMenuSocials(models.Model):
     id = models.BigAutoField(primary_key=True)
+    float_menu = models.ForeignKey(FloatMenu, models.DO_NOTHING, db_column='float_menu', blank=True, null=True)
     platform = models.TextField(blank=True, null=True)
     url = models.TextField(blank=True, null=True)
     hover_color = models.TextField(default='#0d9488', blank=True, null=True)
