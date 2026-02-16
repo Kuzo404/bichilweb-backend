@@ -985,6 +985,7 @@ class News(models.Model):
     image = models.TextField(blank=True, null=True)
     video = models.TextField(blank=True, null=True)
     video_orientation = models.TextField(blank=True, null=True, default='horizontal')
+    facebook_url = models.TextField(blank=True, null=True, default='')
     feature = models.BooleanField(blank=True, null=True)
     render = models.BooleanField(blank=True, null=True)
     show_on_home = models.BooleanField(blank=True, null=True, default=False)

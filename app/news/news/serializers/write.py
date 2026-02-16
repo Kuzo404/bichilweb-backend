@@ -41,6 +41,7 @@ class NewsWriteSerializer(serializers.ModelSerializer):
             "image",
             "video",
             "video_orientation",
+            "facebook_url",
             "feature",
             "render",
             "show_on_home",
