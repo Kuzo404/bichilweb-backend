@@ -1073,6 +1073,14 @@ class NewsPageSettings(models.Model):
     featured_heading = models.TextField(default='Онцлох мэдээ')
     latest_heading_en = models.TextField(default='', blank=True, null=True)
     featured_heading_en = models.TextField(default='', blank=True, null=True)
+    section_label_color = models.TextField(default='#0d9488', blank=True, null=True)
+    section_label_size = models.TextField(default='14px', blank=True, null=True)
+    heading_color = models.TextField(default='#111827', blank=True, null=True)
+    heading_size = models.TextField(default='48px', blank=True, null=True)
+    divider_color = models.TextField(default='#0d9488', blank=True, null=True)
+    button_color = models.TextField(default='#0d9488', blank=True, null=True)
+    button_text_color = models.TextField(default='#ffffff', blank=True, null=True)
+    button_size = models.TextField(default='16px', blank=True, null=True)
 
     class Meta:
         managed = False

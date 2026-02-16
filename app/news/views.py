@@ -183,7 +183,9 @@ class NewsViewSet(viewsets.ModelViewSet):
 class NewsPageSettingsSerializer(drf_serializers.ModelSerializer):
     class Meta:
         model = NewsPageSettings
-        fields = ('id', 'latest_heading', 'featured_heading', 'latest_heading_en', 'featured_heading_en')
+        fields = ('id', 'latest_heading', 'featured_heading', 'latest_heading_en', 'featured_heading_en',
+                  'section_label_color', 'section_label_size', 'heading_color', 'heading_size',
+                  'divider_color', 'button_color', 'button_text_color', 'button_size')
 
 
 @api_view(['GET', 'PUT'])
