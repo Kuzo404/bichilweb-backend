@@ -6,6 +6,9 @@ services:
     plan: standard
     buildCommand: >
       pip install -r requirements.txt &&
+      python manage.py migrate app 0007_create_all_tables --fake &&
+      python manage.py migrate app 0008_exchangerateconfig_floatmenusocials_and_more --fake &&
+      python manage.py migrate app 0009_remove_duplicate_django_models --fake &&
       python manage.py migrate
     startCommand: gunicorn bichilglobusweb.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
