@@ -24,9 +24,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'cloudinary',
     'app',
 ]
+
+# Cloudinary суусан бол INSTALLED_APPS-д нэмнэ
+try:
+    import cloudinary as _cl_check  # noqa: F401
+    INSTALLED_APPS.insert(-1, 'cloudinary')
+except ImportError:
+    pass
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -70,8 +76,9 @@ DATABASES = {
     }
 }
 
-# Render PostgreSQL руу SSL холболт (external холболтод шаардлагатай)
-if 'render.com' in env("DB_HOST", default=""):
+# Render эсвэл гадны PostgreSQL руу SSL холболт
+DB_HOST = env("DB_HOST", default="localhost")
+if env.bool("DB_SSL", default=False) or 'render.com' in DB_HOST:
     DATABASES['default']['OPTIONS'] = {
         'sslmode': 'require',
     }
@@ -121,44 +128,41 @@ FILE_UPLOAD_ALLOWED_MIME_TYPES = [
 ]
 
 # ============================================================================
-# CLOUDINARY STORAGE CONFIGURATION
+# CLOUDINARY / LOCAL STORAGE CONFIGURATION
 # ============================================================================
-# Зураг, видео нуу бүх media файлуудыг Cloudinary дээр хадгалах
+# Cloudinary API_KEY байвал Cloudinary ашиглана,
+# байхгүй бол local media folder руу хадгална.
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default='ddkarwynp'),
+    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default=''),
     'API_KEY': env('CLOUDINARY_API_KEY', default=''),
     'API_SECRET': env('CLOUDINARY_API_SECRET', default=''),
 }
 
-# Cloudinary шууд ашигла
-import cloudinary
-import cloudinary.api
-import cloudinary.uploader
+# USE_CLOUDINARY: API key байвал True, байхгүй бол False (local storage)
+USE_CLOUDINARY = bool(CLOUDINARY_STORAGE['API_KEY'])
 
-# API key үргэлж оршин байхыг шалгах (production дээр алдаа гаргана)
-if not CLOUDINARY_STORAGE['API_KEY']:
-    if not DEBUG:
-        raise ValueError(
-            "❌ CLOUDINARY_API_KEY environment variable идэвхгүй байна!\n"
-            "Render Settings → Environment Variables дээр дараах хувьсагчуудыг нэмнэ үү:\n"
-            "  - CLOUDINARY_CLOUD_NAME=ddkarwynp\n"
-            "  - CLOUDINARY_API_KEY=114548364694963\n"
-            "  - CLOUDINARY_API_SECRET=4T8kJhdnvGzyHKnPzxwBKl7xU30\n"
-            "See: https://console.cloudinary.com"
-        )
-
-cloudinary.config(
-    cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
-    api_key=CLOUDINARY_STORAGE['API_KEY'],
-    api_secret=CLOUDINARY_STORAGE['API_SECRET'],
-)
+if USE_CLOUDINARY:
+    import cloudinary
+    import cloudinary.api
+    import cloudinary.uploader
+    cloudinary.config(
+        cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
+        api_key=CLOUDINARY_STORAGE['API_KEY'],
+        api_secret=CLOUDINARY_STORAGE['API_SECRET'],
+    )
+else:
+    print("ℹ️  Cloudinary идэвхгүй — local media storage ашиглана (/media/)")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-if not DEBUG:
+# SSL тохиргоо: .env дээр SECURE_SSL=True гэж тохируулна (reverse proxy SSL-тэй бол)
+if env.bool("SECURE_SSL", default=False):
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+elif not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
 

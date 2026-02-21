@@ -1,6 +1,6 @@
 """
 Hero Slider CRUD view.
-Зураг/видеог Cloudinary дээр хадгалаад, устгахад Cloudinary-с устгана.
+Зураг/видеог хадгалаад, устгахад устгана.
 """
 import re
 import mimetypes
@@ -8,19 +8,11 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
-import cloudinary
-import cloudinary.uploader
 from django.conf import settings
 
 from app.models.models import HeroSlider
 from app.serializers.heroSlider import HeroSliderSerializer
-
-# Settings.py-д config хийсэн ч дахин баталгаажуулах (cloud_name буруу болох case-с хамгаалах)
-cloudinary.config(
-    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
-    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
-    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
-)
+from app.utils.storage import upload_file, upload_large_file, delete_file
 
 
 class HeroSliderViewSet(ModelViewSet):
@@ -31,12 +23,12 @@ class HeroSliderViewSet(ModelViewSet):
     # Видео хамгийн их хэмжээ (300MB)
     MAX_VIDEO_SIZE = 300 * 1024 * 1024  # 300MB
 
-    # ─── Cloudinary helper: upload ────────────────────────────────
-    def _upload_to_cloudinary(self, file_obj, device='desktop'):
+    # ─── Storage helper: upload ────────────────────────────────
+    def _upload_file(self, file_obj, device='desktop'):
         """
-        Файлыг Cloudinary дээр upload хийнэ.
+        Файлыг upload хийнэ.
         device: 'desktop' | 'tablet' | 'mobile' — folder ялгах
-        Буцаах: Cloudinary secure_url (string)
+        Буцаах: URL (string)
         """
         mime_type, _ = mimetypes.guess_type(file_obj.name)
         if not mime_type:
@@ -52,69 +44,17 @@ class HeroSliderViewSet(ModelViewSet):
                 f'Хамгийн ихдээ {self.MAX_VIDEO_SIZE / (1024*1024):.0f}MB (~2 мин) байх ёстой.'
             )
 
-        # Файлын нэрнээс extension-г хасаж public_id болгох
-        name_without_ext = file_obj.name.rsplit('.', 1)[0] if '.' in file_obj.name else file_obj.name
         folder = f"bichil/hero_slider/{device}"
 
-        # TemporaryUploadedFile бол disk path ашиглах (санах ойд ачаалахгүй)
-        if hasattr(file_obj, 'temporary_file_path'):
-            upload_source = file_obj.temporary_file_path()
-        else:
-            upload_source = file_obj
-
         if is_video:
-            # Видео: upload_large() ашиглан chunk-аар илгээх (6MB chunk → илүү найдвартай)
-            result = cloudinary.uploader.upload_large(
-                upload_source,
-                resource_type=resource_type,
-                folder=folder,
-                public_id=name_without_ext,
-                overwrite=True,
-                chunk_size=6_000_000,   # 6MB chunk (найдвартай)
-                timeout=600,            # 10 минут timeout
-            )
+            return upload_large_file(file_obj, folder=folder, resource_type=resource_type)
         else:
-            # Зураг: ердийн upload
-            result = cloudinary.uploader.upload(
-                upload_source,
-                resource_type=resource_type,
-                folder=folder,
-                public_id=name_without_ext,
-                overwrite=True,
-                quality='auto',
-                fetch_format='auto',
-            )
-        return result['secure_url']
+            return upload_file(file_obj, folder=folder, resource_type=resource_type)
 
-    # ─── Cloudinary helper: delete ────────────────────────────────
-    def _delete_from_cloudinary(self, url):
-        """
-        Cloudinary URL-с public_id гаргаж аваад устгана.
-        URL жишээ: https://res.cloudinary.com/bichil/image/upload/v1234/bichil/hero_slider/desktop/banner.jpg
-        """
-        if not url or 'cloudinary.com' not in url:
-            return  # Cloudinary биш URL байвал алгасах (хуучин local файл)
-
-        try:
-            # resource_type тодорхойлох
-            if '/video/upload/' in url:
-                resource_type = 'video'
-            else:
-                resource_type = 'image'
-
-            # URL-с public_id гаргах: /upload/vXXXX/ хэсгийн ард байгаа path
-            match = re.search(r'/upload/v\d+/(.+)$', url)
-            if not match:
-                return
-
-            public_id_with_ext = match.group(1)
-            # Extension-г хасах
-            public_id = public_id_with_ext.rsplit('.', 1)[0]
-
-            cloudinary.uploader.destroy(public_id, resource_type=resource_type)
-        except Exception as e:
-            # Устгаж чадаагүй ч үндсэн ажиллагаанд нөлөөлөхгүй
-            print(f"[HeroSlider] Cloudinary delete алдаа: {e}")
+    # ─── Storage helper: delete ────────────────────────────────
+    def _delete_file(self, url):
+        """Файл устгах (Cloudinary эсвэл local)."""
+        delete_file(url)
 
     # ─── CREATE ───────────────────────────────────────────────────
     def create(self, request, *args, **kwargs):
@@ -125,11 +65,11 @@ class HeroSliderViewSet(ModelViewSet):
 
         try:
             if file:
-                data['file'] = self._upload_to_cloudinary(file, 'desktop')
+                data['file'] = self._upload_file(file, 'desktop')
             if tablet_file:
-                data['tablet_file'] = self._upload_to_cloudinary(tablet_file, 'tablet')
+                data['tablet_file'] = self._upload_file(tablet_file, 'tablet')
             if mobile_file:
-                data['mobile_file'] = self._upload_to_cloudinary(mobile_file, 'mobile')
+                data['mobile_file'] = self._upload_file(mobile_file, 'mobile')
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -157,22 +97,22 @@ class HeroSliderViewSet(ModelViewSet):
         try:
             # Desktop файл — шинэ upload байвал хуучныг устгаад шинийг хадгалах
             if file:
-                self._delete_from_cloudinary(instance.file)
-                data['file'] = self._upload_to_cloudinary(file, 'desktop')
+                self._delete_file(instance.file)
+                data['file'] = self._upload_file(file, 'desktop')
             else:
                 data['file'] = instance.file
 
             # Tablet файл
             if tablet_file:
-                self._delete_from_cloudinary(instance.tablet_file)
-                data['tablet_file'] = self._upload_to_cloudinary(tablet_file, 'tablet')
+                self._delete_file(instance.tablet_file)
+                data['tablet_file'] = self._upload_file(tablet_file, 'tablet')
             else:
                 data['tablet_file'] = instance.tablet_file or ''
 
             # Mobile файл
             if mobile_file:
-                self._delete_from_cloudinary(instance.mobile_file)
-                data['mobile_file'] = self._upload_to_cloudinary(mobile_file, 'mobile')
+                self._delete_file(instance.mobile_file)
+                data['mobile_file'] = self._upload_file(mobile_file, 'mobile')
             else:
                 data['mobile_file'] = instance.mobile_file or ''
         except ValueError as e:
@@ -200,9 +140,9 @@ class HeroSliderViewSet(ModelViewSet):
         instance = self.get_object()
 
         # Бүх device-н файлуудыг Cloudinary-с устгах
-        self._delete_from_cloudinary(instance.file)
-        self._delete_from_cloudinary(instance.tablet_file)
-        self._delete_from_cloudinary(instance.mobile_file)
+        self._delete_file(instance.file)
+        self._delete_file(instance.tablet_file)
+        self._delete_file(instance.mobile_file)
 
         # DB-с устгах
         self.perform_destroy(instance)

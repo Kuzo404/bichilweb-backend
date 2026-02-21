@@ -8,16 +8,8 @@ from app.news.category.serializers.write import NewsCategoryWriteSerializer
 from app.news.news.serializers.read import NewsReadSerializer
 from app.news.news.serializers.write import NewsWriteSerializer
 import re
-import cloudinary
-import cloudinary.uploader
 from django.conf import settings as django_settings
-
-# Cloudinary config
-cloudinary.config(
-    cloud_name=django_settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
-    api_key=django_settings.CLOUDINARY_STORAGE['API_KEY'],
-    api_secret=django_settings.CLOUDINARY_STORAGE['API_SECRET'],
-)
+from app.utils.storage import delete_file
 
 class NewsCategoryViewSet(viewsets.ModelViewSet):
     queryset = NewsCategory.objects.all().prefetch_related(
@@ -136,31 +128,14 @@ class NewsViewSet(viewsets.ModelViewSet):
         read_serializer = NewsReadSerializer(instance)
         data = read_serializer.data
         
-        # Delete main image from Cloudinary
+        # Delete main image
         if instance.image:
-            if 'cloudinary.com' in str(instance.image):
-                try:
-                    match = re.search(r'/upload/v\d+/(.+)$', instance.image)
-                    if match:
-                        public_id_with_ext = match.group(1)
-                        public_id = public_id_with_ext.rsplit('.', 1)[0]
-                        cloudinary.uploader.destroy(public_id, resource_type='image')
-                        print(f"\u2705 News main image deleted from Cloudinary: {public_id}")
-                except Exception as e:
-                    print(f"\u274c News Cloudinary delete error: {e}")
+            delete_file(instance.image)
         
-        # Delete additional images from Cloudinary
+        # Delete additional images
         for img in instance.newsimages_set.all():
-            if img.image and 'cloudinary.com' in str(img.image):
-                try:
-                    match = re.search(r'/upload/v\d+/(.+)$', img.image)
-                    if match:
-                        public_id_with_ext = match.group(1)
-                        public_id = public_id_with_ext.rsplit('.', 1)[0]
-                        cloudinary.uploader.destroy(public_id, resource_type='image')
-                        print(f"\u2705 News additional image deleted from Cloudinary: {public_id}")
-                except Exception as e:
-                    print(f"\u274c News Cloudinary additional image delete error: {e}")
+            if img.image:
+                delete_file(img.image)
         
         # Manually delete all related records (models use DO_NOTHING, DB has FK constraints)
         instance.newstitletranslations_set.all().delete()

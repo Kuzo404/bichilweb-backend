@@ -1,25 +1,17 @@
 """
 Management Member CRUD view.
-Зургийг Cloudinary дээр хадгалаад, устгахад Cloudinary-с устгана.
+Зургийг хадгалаад, устгахад устгана.
 """
 import re
 from rest_framework import viewsets, status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
-import cloudinary
-import cloudinary.uploader
 from django.conf import settings
 
 from app.models.models import ManagementMember, ManagementMemberTranslations
 from app.management.serializers import ManagementMemberReadSerializer
 from app.management.write_serializers import ManagementMemberWriteSerializer
-
-# Cloudinary config
-cloudinary.config(
-    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
-    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
-    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
-)
+from app.utils.storage import upload_file, delete_file
 
 
 class ManagementMemberViewSet(viewsets.ModelViewSet):
@@ -41,40 +33,13 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
             qs = qs.filter(type=member_type)
         return qs
 
-    # ─── Cloudinary helper: upload ────────────────────────────────
-    def _upload_to_cloudinary(self, file_obj):
-        name_without_ext = file_obj.name.rsplit('.', 1)[0] if '.' in file_obj.name else file_obj.name
-        folder = "bichil/management"
+    # ─── Storage helper: upload ────────────────────────────────
+    def _upload_file(self, file_obj):
+        return upload_file(file_obj, folder='bichil/management', resource_type='image')
 
-        if hasattr(file_obj, 'temporary_file_path'):
-            upload_source = file_obj.temporary_file_path()
-        else:
-            upload_source = file_obj
-
-        result = cloudinary.uploader.upload(
-            upload_source,
-            resource_type='image',
-            folder=folder,
-            public_id=name_without_ext,
-            overwrite=True,
-            quality='auto',
-            fetch_format='auto',
-        )
-        return result['secure_url']
-
-    # ─── Cloudinary helper: delete ────────────────────────────────
-    def _delete_from_cloudinary(self, url):
-        if not url or 'cloudinary.com' not in str(url):
-            return
-        try:
-            match = re.search(r'/upload/v\d+/(.+)$', url)
-            if not match:
-                return
-            public_id_with_ext = match.group(1)
-            public_id = public_id_with_ext.rsplit('.', 1)[0]
-            cloudinary.uploader.destroy(public_id, resource_type='image')
-        except Exception as e:
-            print(f"[Management] Cloudinary delete алдаа: {e}")
+    # ─── Storage helper: delete ────────────────────────────────
+    def _delete_file(self, url):
+        delete_file(url)
 
     # ─── CREATE ───────────────────────────────────────────────────
     def create(self, request, *args, **kwargs):
@@ -83,8 +48,8 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
 
         try:
             if image_file:
-                cloudinary_url = self._upload_to_cloudinary(image_file)
-                data['image'] = cloudinary_url
+                file_url = self._upload_file(image_file)
+                data['image'] = file_url
         except Exception as e:
             return Response(
                 {'detail': f'Cloudinary upload алдаа: {str(e)}'},
@@ -107,9 +72,9 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
 
         try:
             if image_file:
-                self._delete_from_cloudinary(instance.image)
-                cloudinary_url = self._upload_to_cloudinary(image_file)
-                data['image'] = cloudinary_url
+                self._delete_file(instance.image)
+                file_url = self._upload_file(image_file)
+                data['image'] = file_url
         except Exception as e:
             return Response(
                 {'detail': f'Cloudinary upload алдаа: {str(e)}'},
@@ -128,7 +93,7 @@ class ManagementMemberViewSet(viewsets.ModelViewSet):
     # ─── DELETE ───────────────────────────────────────────────────
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        self._delete_from_cloudinary(instance.image)
+        self._delete_file(instance.image)
         ManagementMemberTranslations.objects.filter(member=instance).delete()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)

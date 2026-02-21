@@ -1,5 +1,5 @@
 # =============================================================================
-# VIEWSET - CTA Slider (Cloudinary дээр хадгална)
+# VIEWSET - CTA Slider
 # =============================================================================
 # app/views/cta.py
 
@@ -10,19 +10,11 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework import status
 import json
-import cloudinary
-import cloudinary.uploader
 from django.conf import settings
 
 from app.models.models import Cta, CtaTitle, CtaSubtitle
 from app.serializers.cta import CtaSerializer
-
-# Settings.py-д config хийсэн ч дахин баталгаажуулах
-cloudinary.config(
-    cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
-    api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
-    api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
-)
+from app.utils.storage import upload_file, delete_file
 
 
 class CtaViewSet(ModelViewSet):
@@ -30,46 +22,14 @@ class CtaViewSet(ModelViewSet):
     serializer_class = CtaSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    # ─── Cloudinary helpers ───────────────────────────────────────
-    def _upload_to_cloudinary(self, file_obj):
-        """Файлыг Cloudinary дээр upload хийнэ. Буцаах: secure_url"""
-        mime_type, _ = mimetypes.guess_type(file_obj.name)
-        if not mime_type:
-            mime_type = file_obj.content_type or 'application/octet-stream'
+    # ─── Storage helpers ─────────────────────────────────────────
+    def _upload_to_storage(self, file_obj):
+        """Файлыг upload хийнэ. Буцаах: URL"""
+        return upload_file(file_obj, folder='bichil/cta', resource_type='image')
 
-        resource_type = 'image'
-        name_without_ext = file_obj.name.rsplit('.', 1)[0] if '.' in file_obj.name else file_obj.name
-
-        result = cloudinary.uploader.upload(
-            file_obj,
-            resource_type=resource_type,
-            folder='bichil/cta',
-            public_id=name_without_ext,
-            overwrite=True,
-            quality='auto',
-            fetch_format='auto',
-        )
-        return result['secure_url']
-
-    def _delete_from_cloudinary(self, url):
-        """Cloudinary URL-с файлыг устгах"""
-        if not url or 'cloudinary.com' not in url:
-            return  # Cloudinary биш URL (хуучин local файл)
-
-        try:
-            if '/video/upload/' in url:
-                resource_type = 'video'
-            else:
-                resource_type = 'image'
-
-            match = re.search(r'/upload/v\d+/(.+)$', url)
-            if not match:
-                return
-
-            public_id = match.group(1).rsplit('.', 1)[0]
-            cloudinary.uploader.destroy(public_id, resource_type=resource_type)
-        except Exception as e:
-            print(f"[CTA] Cloudinary delete алдаа: {e}")
+    def _delete_from_storage(self, url):
+        """Файл устгах"""
+        delete_file(url)
 
     def create(self, request, *args, **kwargs):
         """Create new CTA slide"""
@@ -83,7 +43,7 @@ class CtaViewSet(ModelViewSet):
             data['url'] = request.data.get('url', '')
             if 'file' in request.FILES:
                 file = request.FILES['file']
-                data['file'] = self._upload_to_cloudinary(file)
+                data['file'] = self._upload_to_storage(file)
             else:
                 return Response(
                     {'error': 'File is required'},
@@ -188,9 +148,9 @@ class CtaViewSet(ModelViewSet):
                 file = request.FILES['file']
                 
                 # Хуучин файлыг Cloudinary-с устгах
-                self._delete_from_cloudinary(instance.file)
+                self._delete_from_storage(instance.file)
                 
-                data['file'] = self._upload_to_cloudinary(file)
+                data['file'] = self._upload_to_storage(file)
             else:
                 data['file'] = instance.file
             
@@ -271,7 +231,7 @@ class CtaViewSet(ModelViewSet):
             instance = self.get_object()
             
             # Cloudinary дээрх файлыг устгах
-            self._delete_from_cloudinary(instance.file)
+            self._delete_from_storage(instance.file)
             
             # FK constraint-тай child record-уудыг эхлээд устгах
             # (DB-д CASCADE байхгүй тул гараар устгана)

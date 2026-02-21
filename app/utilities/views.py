@@ -313,28 +313,10 @@ class BranchesViewSet(viewsets.ModelViewSet):
         read_serializer = BranchesReadSerializer(instance)
         data = read_serializer.data
         
-        # Delete Cloudinary image if exists
-        if instance.image and 'cloudinary.com' in str(instance.image):
-            import re
-            import cloudinary
-            import cloudinary.uploader
-            try:
-                match = re.search(r'/upload/v\d+/(.+)$', instance.image)
-                if match:
-                    public_id = match.group(1).rsplit('.', 1)[0]
-                    cloudinary.uploader.destroy(public_id, resource_type='image')
-                    print(f"✅ Branch Cloudinary image deleted on destroy")
-            except Exception as e:
-                print(f"❌ Branch Cloudinary delete error on destroy: {e}")
-        elif instance.image:
-            # Legacy local file cleanup
-            clean_filename = instance.image.replace('media/', '').replace('branches/', '')
-            image_path = os.path.join(settings.MEDIA_ROOT, 'branches', clean_filename)
-            if os.path.exists(image_path):
-                try:
-                    os.remove(image_path)
-                except Exception as e:
-                    print(f"Error deleting image: {e}")
+        # Delete image file (Cloudinary or local)
+        if instance.image:
+            from app.utils.storage import delete_file
+            delete_file(instance.image)
         
         instance.delete()
         
@@ -626,33 +608,8 @@ class FooterViewSet(viewsets.ModelViewSet):
         data = read_serializer.data
         
         if instance.logo:
-            # Cloudinary URL бол Cloudinary-с устгана
-            if 'cloudinary.com' in str(instance.logo):
-                try:
-                    import re
-                    import cloudinary
-                    import cloudinary.uploader
-                    cloudinary.config(
-                        cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
-                        api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
-                        api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
-                    )
-                    match = re.search(r'/upload/v\d+/(.+)$', instance.logo)
-                    if match:
-                        public_id = match.group(1).rsplit('.', 1)[0]
-                        cloudinary.uploader.destroy(public_id, resource_type='image')
-                        print(f'✅ Cloudinary footer logo deleted: {public_id}')
-                except Exception as e:
-                    print(f'❌ Cloudinary footer delete error: {e}')
-            else:
-                clean_filename = instance.logo.replace('media/', '').replace('footer/', '')
-                image_path = os.path.join(settings.MEDIA_ROOT, 'footer', clean_filename)
-                if os.path.exists(image_path):
-                    try:
-                        os.remove(image_path)
-                        print(f'✅ Logo deleted: {clean_filename}')
-                    except Exception as e:
-                        print(f'❌ Error deleting logo: {e}')
+            from app.utils.storage import delete_file
+            delete_file(instance.logo)
         
         instance.delete()
         
