@@ -10,8 +10,11 @@ from app.models.models import (
 )
 import json
 import re
+import logging
 from django.conf import settings
 from app.utils.storage import upload_file, delete_file
+
+logger = logging.getLogger(__name__)
 
 
 class NewsWriteSerializer(serializers.ModelSerializer):
@@ -115,7 +118,7 @@ class NewsWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         images_data = validated_data.pop('images', [])
         socials_data = validated_data.pop('socials', [])
-        print(f"📥 SOCIALS DATA in create: {socials_data}")
+        logger.debug('SOCIALS DATA in create: %s', socials_data)
         title_translations_data = validated_data.pop('title_translations')
         shortdesc_translations_data = validated_data.pop('shortdesc_translations')
         content_translations_data = validated_data.pop('content_translations')
@@ -126,7 +129,7 @@ class NewsWriteSerializer(serializers.ModelSerializer):
         if image_file:
             file_url = self._upload_to_storage(image_file)
             validated_data['image'] = file_url
-            print(f"\u2705 News image uploaded to Cloudinary: {file_url}")
+            logger.debug('News image uploaded: %s', file_url)
 
         # Create news
         news = News.objects.create(**validated_data)
@@ -174,7 +177,7 @@ class NewsWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         images_data = validated_data.pop('images', None)
         socials_data = validated_data.pop('socials', None)
-        print(f"📥 SOCIALS DATA in update: {socials_data}")
+        logger.debug('SOCIALS DATA in update: %s', socials_data)
         title_translations_data = validated_data.pop('title_translations', None)
         shortdesc_translations_data = validated_data.pop('shortdesc_translations', None)
         content_translations_data = validated_data.pop('content_translations', None)
@@ -190,7 +193,7 @@ class NewsWriteSerializer(serializers.ModelSerializer):
             # Upload new image to Cloudinary
             file_url = self._upload_to_storage(image_file)
             validated_data['image'] = file_url
-            print(f"\u2705 News image updated on Cloudinary: {file_url}")
+            logger.debug('News image updated: %s', file_url)
 
         # Update news fields
         instance.category = validated_data.get('category', instance.category)

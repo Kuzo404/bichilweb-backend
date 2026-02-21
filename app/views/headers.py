@@ -2,7 +2,9 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from app.models.models import Header
 from app.serializers.headers import HeaderSerializer, HeaderCreateUpdateSerializer
-import traceback
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # HEADER VIEWSET
@@ -54,8 +56,7 @@ class HeaderViewSet(viewsets.ModelViewSet):
             return Response([result_data])
 
         except Exception as e:
-            print(f'❌ Header list алдаа: {e}')
-            traceback.print_exc()
+            logger.exception('Header list алдаа: %s', e)
             # Алдаа гарсан ч хоосон бүтэц буцааж 500 гаргахгүй
             return Response([EMPTY_HEADER])
 
@@ -70,8 +71,7 @@ class HeaderViewSet(viewsets.ModelViewSet):
             result_data = serializer.data
             return Response(result_data)
         except Exception as e:
-            print(f'❌ Header retrieve алдаа: {e}')
-            traceback.print_exc()
+            logger.exception('Header retrieve алдаа: %s', e)
             return Response(EMPTY_HEADER)
 
     def destroy(self, request, *args, **kwargs):

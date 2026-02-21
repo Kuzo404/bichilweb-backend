@@ -1,9 +1,12 @@
 from rest_framework import serializers
+import logging
 from app.models.models import (
     Header, HeaderStyle, HeaderMenu, HeaderMenuTranslation,
     HeaderSubmenu, HeaderSubmenuTranslation,
     HeaderTertiaryMenu, HeaderTertiaryMenuTranslation,
 )
+
+logger = logging.getLogger(__name__)
 
 class HeaderMenuTranslationSerializer(serializers.ModelSerializer):
     language_id = serializers.IntegerField(source='language.id')
@@ -104,7 +107,7 @@ class HeaderSerializer(serializers.ModelSerializer):
             styles = obj.headerstyle_set.all()
             return HeaderStyleSerializer(styles, many=True).data
         except Exception as e:
-            print(f'⚠️ HeaderStyle serialization алдаа (max_width/logo_size багана байхгүй байж магадгүй): {e}')
+            logger.warning('HeaderStyle serialization алдаа (max_width/logo_size багана байхгүй байж магадгүй): %s', e)
             # Raw SQL-ээр зөвхөн байгаа баганууд уншина
             try:
                 from django.db import connection
@@ -128,7 +131,7 @@ class HeaderSerializer(serializers.ModelSerializer):
                         })
                     return result
             except Exception as e2:
-                print(f'⚠️ Raw SQL fallback бас алдаа: {e2}')
+                logger.warning('Raw SQL fallback бас алдаа: %s', e2)
                 return []
 
 class HeaderCreateUpdateSerializer(serializers.ModelSerializer):

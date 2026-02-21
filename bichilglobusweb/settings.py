@@ -100,16 +100,40 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Django 4.2+ STORAGES формат (STATICFILES_STORAGE хуучирсан)
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
 
 # ============================================================================
+# DJANGO REST FRAMEWORK
+# ============================================================================
+REST_FRAMEWORK = {
+    # Pagination — бүх list endpoint автомат pagination-тай болно
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+
+    # Rate limiting — DoS довтолгооноос хамгаалах
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/min',
+        'user': '300/min',
+    },
+}
+
+# ============================================================================
 # UPLOAD & MEDIA SETTINGS
 # ============================================================================
 # Файл upload хэмжээний хязгаар
-DATA_UPLOAD_MAX_MEMORY_SIZE = 314572800   # 300MB — хүсэлтийн нийт хэмжээ
+DATA_UPLOAD_MAX_MEMORY_SIZE = 115343360   # 110MB — хүсэлтийн нийт хэмжээ
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760   # 10MB  — үүнээс том файл disk-д temp хадгална (OOM-с хамгаална)
 # Үнэт видео, зураг файлуудыг хүлээн авах
 FILE_UPLOAD_ALLOWED_MIME_TYPES = [
@@ -151,7 +175,8 @@ if USE_CLOUDINARY:
         api_secret=CLOUDINARY_STORAGE['API_SECRET'],
     )
 else:
-    print("ℹ️  Cloudinary идэвхгүй — local media storage ашиглана (/media/)")
+    import logging as _log
+    _log.getLogger('django').info('Cloudinary идэвхгүй — local media storage ашиглана (/media/)')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -162,6 +187,10 @@ if env.bool("SECURE_SSL", default=False):
     CSRF_COOKIE_SECURE = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
+    # HSTS тохиргоо — HTTPS шаардах
+    SECURE_HSTS_SECONDS = 31536000  # 1 жил
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 elif not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
@@ -170,18 +199,35 @@ elif not DEBUG:
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
+        "console": {
+            "level": "WARNING",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
         "file": {
             "level": "ERROR",
             "class": "logging.FileHandler",
             "filename": BASE_DIR / "errors.log",
+            "formatter": "verbose",
         },
     },
     "loggers": {
         "django": {
-            "handlers": ["file"],
-            "level": "ERROR",
+            "handlers": ["console", "file"],
+            "level": "WARNING",
             "propagate": True,
+        },
+        "app": {
+            "handlers": ["console", "file"],
+            "level": "WARNING",
+            "propagate": False,
         },
     },
 }

@@ -8,8 +8,11 @@ from app.news.category.serializers.write import NewsCategoryWriteSerializer
 from app.news.news.serializers.read import NewsReadSerializer
 from app.news.news.serializers.write import NewsWriteSerializer
 import re
+import logging
 from django.conf import settings as django_settings
 from app.utils.storage import delete_file
+
+logger = logging.getLogger(__name__)
 
 class NewsCategoryViewSet(viewsets.ModelViewSet):
     queryset = NewsCategory.objects.all().prefetch_related(
@@ -91,11 +94,10 @@ class NewsViewSet(viewsets.ModelViewSet):
         return NewsWriteSerializer
 
     def create(self, request, *args, **kwargs):
-        print(f"📥 NEWS CREATE - Content-Type: {request.content_type}")
-        print(f"📥 NEWS CREATE - Data keys: {list(request.data.keys())}")
+        logger.debug('NEWS CREATE - Content-Type: %s, keys: %s', request.content_type, list(request.data.keys()))
         write_serializer = NewsWriteSerializer(data=request.data)
         if not write_serializer.is_valid():
-            print(f"❌ NEWS VALIDATION ERRORS: {write_serializer.errors}")
+            logger.warning('NEWS VALIDATION ERRORS: %s', write_serializer.errors)
             return Response(write_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         instance = write_serializer.save()
         

@@ -2,8 +2,11 @@ from rest_framework import serializers
 from app.models.models import Branches, BranchPhone, BranchCategory
 import json
 import re
+import logging
 from django.conf import settings
 from app.utils.storage import upload_file, delete_file
+
+logger = logging.getLogger(__name__)
 
 
 class BranchesWriteSerializer(serializers.ModelSerializer):
@@ -57,7 +60,7 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
         if image_file:
             file_url = self._upload_to_storage(image_file)
             validated_data['image'] = file_url
-            print(f"✅ Branch image uploaded to Cloudinary: {file_url}")
+            logger.debug('Branch image uploaded: %s', file_url)
         
         if category_id:
             try:
@@ -84,7 +87,7 @@ class BranchesWriteSerializer(serializers.ModelSerializer):
                 self._delete_from_storage(instance.image)
             file_url = self._upload_to_storage(image_file)
             validated_data['image'] = file_url
-            print(f"✅ Branch image updated on Cloudinary: {file_url}")
+            logger.debug('Branch image updated: %s', file_url)
         
         instance.name = validated_data.get('name', instance.name)
         instance.name_en = validated_data.get('name_en', instance.name_en)

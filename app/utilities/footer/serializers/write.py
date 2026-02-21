@@ -1,9 +1,12 @@
 import re
 import json
+import logging
 from rest_framework import serializers
 from django.conf import settings
 from app.models.models import Footer, FooterSocials, FooterUrls
 from app.utils.storage import upload_file, delete_file
+
+logger = logging.getLogger(__name__)
 
 class FooterSocialsWriteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,7 +89,7 @@ class FooterWriteSerializer(serializers.ModelSerializer):
         if logo_file:
             file_url = self._upload_to_storage(logo_file)
             validated_data['logo'] = file_url
-            print(f'✅ Footer logo uploaded: {file_url}')
+            logger.debug('Footer logo uploaded: %s', file_url)
         
         footer = Footer.objects.create(**validated_data)
         
@@ -109,7 +112,7 @@ class FooterWriteSerializer(serializers.ModelSerializer):
                 self._delete_from_storage(instance.logo)
             file_url = self._upload_to_storage(logo_file)
             validated_data['logo'] = file_url
-            print(f'✅ Footer logo updated: {file_url}')
+            logger.debug('Footer logo updated: %s', file_url)
         
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

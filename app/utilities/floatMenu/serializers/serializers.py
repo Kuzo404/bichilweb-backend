@@ -1,8 +1,11 @@
 from rest_framework import serializers
 from app.models.models import FloatMenu, FloatMenuSubmenus, FloatMenuSubmenusTranslations, FloatMenuTranslations, FloatMenuSocials, Language
 import os
+import logging
 from django.conf import settings
 import uuid
+
+logger = logging.getLogger(__name__)
 
 
 class FloatMenuSocialsSerializer(serializers.ModelSerializer):
@@ -185,9 +188,9 @@ class FloatMenuWriteSerializer(serializers.ModelSerializer):
             if os.path.exists(image_path):
                 try:
                     os.remove(image_path)
-                    print(f"✅ Image deleted: {clean_filename}")
+                    logger.debug('Image deleted: %s', clean_filename)
                 except Exception as e:
-                    print(f"❌ Error deleting image: {e}")
+                    logger.warning('Error deleting image: %s', e)
     
     def create(self, validated_data):
         translations_data = validated_data.pop('translations', [])
@@ -197,7 +200,7 @@ class FloatMenuWriteSerializer(serializers.ModelSerializer):
         if image_file:
             filename = self._save_image(image_file)
             validated_data['image'] = filename
-            print(f"✅ FloatMenu image saved: {filename}")
+            logger.debug('FloatMenu image saved: %s', filename)
         
         float_menu = FloatMenu.objects.create(**validated_data)
         
@@ -214,7 +217,7 @@ class FloatMenuWriteSerializer(serializers.ModelSerializer):
             if submenu_file:
                 filename = self._save_image(submenu_file, 'submenus')
                 submenu_data['file'] = filename
-                print(f"✅ Submenu image saved: {filename}")
+                logger.debug('Submenu image saved: %s', filename)
             
             submenu = FloatMenuSubmenus.objects.create(
                 float_menu=float_menu,
@@ -240,7 +243,7 @@ class FloatMenuWriteSerializer(serializers.ModelSerializer):
             
             filename = self._save_image(image_file)
             validated_data['image'] = filename
-            print(f"✅ FloatMenu image updated: {filename}")
+            logger.debug('FloatMenu image updated: %s', filename)
         
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -267,7 +270,7 @@ class FloatMenuWriteSerializer(serializers.ModelSerializer):
                 if submenu_file:
                     filename = self._save_image(submenu_file, 'submenus')
                     submenu_data['file'] = filename
-                    print(f"✅ Submenu image updated: {filename}")
+                    logger.debug('Submenu image updated: %s', filename)
                 
                 submenu = FloatMenuSubmenus.objects.create(
                     float_menu=instance,
@@ -323,7 +326,7 @@ class FloatMenuSubmenuCreateSerializer(serializers.ModelSerializer):
         if file:
             filename = self._save_image(file)
             validated_data['file'] = filename
-            print(f"✅ Submenu image saved: {filename}")
+            logger.debug('Submenu image saved: %s', filename)
         
         submenu = FloatMenuSubmenus.objects.create(**validated_data)
         
@@ -373,9 +376,9 @@ class FloatMenuSubmenuUpdateSerializer(serializers.ModelSerializer):
             if os.path.exists(image_path):
                 try:
                     os.remove(image_path)
-                    print(f"✅ Submenu image deleted: {clean_filename}")
+                    logger.debug('Submenu image deleted: %s', clean_filename)
                 except Exception as e:
-                    print(f"❌ Error deleting submenu image: {e}")
+                    logger.warning('Error deleting submenu image: %s', e)
     
     def update(self, instance, validated_data):
         translations_data = validated_data.pop('translations', None)
@@ -387,7 +390,7 @@ class FloatMenuSubmenuUpdateSerializer(serializers.ModelSerializer):
             
             filename = self._save_image(file)
             validated_data['file'] = filename
-            print(f"✅ Submenu image updated: {filename}")
+            logger.debug('Submenu image updated: %s', filename)
         
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

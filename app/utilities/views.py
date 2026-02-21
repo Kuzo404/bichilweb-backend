@@ -2,8 +2,12 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
+import os
+import logging
 
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
+logger = logging.getLogger(__name__)
 from app.models.models import Document, Collateral, Conditions, Pages, Branches, BranchCategory, BranchPageSettings, HrPolicy, JobTranslations, Jobs, Footer, FloatMenu, FloatMenuSubmenus, FloatMenuSocials
 from app.utilities.document.serializers.read import DocumentReadSerializer
 from app.utilities.document.serializers.write import DocumentWriteSerializer
@@ -746,9 +750,9 @@ class FloatMenuViewSet(viewsets.ModelViewSet):
             if os.path.exists(image_path):
                 try:
                     os.remove(image_path)
-                    print(f"✅ FloatMenu image deleted: {clean_filename}")
+                    logger.debug('FloatMenu image deleted: %s', clean_filename)
                 except Exception as e:
-                    print(f"❌ Error deleting FloatMenu image: {e}")
+                    logger.warning('Error deleting FloatMenu image: %s', e)
         
         # Delete all submenu files and related DB records
         # Must delete in order: translations → submenus → menu translations → menu
@@ -760,9 +764,9 @@ class FloatMenuViewSet(viewsets.ModelViewSet):
                 if os.path.exists(file_path):
                     try:
                         os.remove(file_path)
-                        print(f"✅ Submenu file deleted: {clean_filename}")
+                        logger.debug('Submenu file deleted: %s', clean_filename)
                     except Exception as e:
-                        print(f"❌ Error deleting submenu file: {e}")
+                        logger.warning('Error deleting submenu file: %s', e)
             # Delete submenu translations first (FK → submenu)
             submenu.floatmenusubmenustranslations_set.all().delete()
             # Then delete the submenu itself
@@ -916,9 +920,9 @@ class FloatMenuSubmenuViewSet(viewsets.ModelViewSet):
             if os.path.exists(file_path):
                 try:
                     os.remove(file_path)
-                    print(f"✅ Submenu file deleted: {clean_filename}")
+                    logger.debug('Submenu file deleted: %s', clean_filename)
                 except Exception as e:
-                    print(f"❌ Error deleting submenu file: {e}")
+                    logger.warning('Error deleting submenu file: %s', e)
         
         instance.delete()
         

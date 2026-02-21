@@ -7,8 +7,11 @@ settings.py дээр USE_CLOUDINARY = True/False тохируулна.
 import os
 import re
 import uuid
+import logging
 import mimetypes
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _is_cloudinary_enabled():
@@ -115,7 +118,7 @@ def delete_file(url_or_path, resource_type='image'):
                 public_id = public_id_with_ext.rsplit('.', 1)[0]
                 cloudinary.uploader.destroy(public_id, resource_type=resource_type)
         except Exception as e:
-            print(f"[storage] Cloudinary delete error: {e}")
+            logger.warning('[storage] Cloudinary delete error: %s', e)
     else:
         # Local file delete
         if url_str.startswith(settings.MEDIA_URL):
@@ -125,7 +128,7 @@ def delete_file(url_or_path, resource_type='image'):
                 try:
                     os.remove(local_path)
                 except Exception as e:
-                    print(f"[storage] Local delete error: {e}")
+                    logger.warning('[storage] Local delete error: %s', e)
         elif url_str.startswith('media/') or url_str.startswith('/media/'):
             clean = url_str.lstrip('/').replace('media/', '', 1)
             local_path = os.path.join(settings.MEDIA_ROOT, clean)
@@ -133,4 +136,4 @@ def delete_file(url_or_path, resource_type='image'):
                 try:
                     os.remove(local_path)
                 except Exception as e:
-                    print(f"[storage] Local delete error: {e}")
+                    logger.warning('[storage] Local delete error: %s', e)

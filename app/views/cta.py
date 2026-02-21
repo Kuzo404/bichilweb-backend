@@ -10,7 +10,10 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework import status
 import json
+import logging
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 from app.models.models import Cta, CtaTitle, CtaSubtitle
 from app.serializers.cta import CtaSerializer
@@ -80,9 +83,9 @@ class CtaViewSet(ModelViewSet):
                                 label=title_item.get('label', '')
                             )
                 except json.JSONDecodeError as e:
-                    print(f"Titles JSON parse error: {e}")
+                    logger.warning('Titles JSON parse error: %s', e)
                 except Exception as e:
-                    print(f"Titles create error: {e}")
+                    logger.warning('Titles create error: %s', e)
             
             # Subtitles үүсгэх
             subtitles_json = request.data.get('subtitles')
@@ -109,9 +112,9 @@ class CtaViewSet(ModelViewSet):
                                 label=subtitle_item.get('label', '')
                             )
                 except json.JSONDecodeError as e:
-                    print(f"Subtitles JSON parse error: {e}")
+                    logger.warning('Subtitles JSON parse error: %s', e)
                 except Exception as e:
-                    print(f"Subtitles create error: {e}")
+                    logger.warning('Subtitles create error: %s', e)
             
             # Response буцаах
             response_serializer = self.get_serializer(cta_instance)
@@ -121,11 +124,9 @@ class CtaViewSet(ModelViewSet):
             )
             
         except Exception as e:
-            print(f"Create error: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.exception('CTA create error')
             return Response(
-                {'error': str(e)},
+                {'error': 'Серверийн алдаа гарлаа'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -184,7 +185,7 @@ class CtaViewSet(ModelViewSet):
                                 label=title_item.get('label', '')
                             )
                 except Exception as e:
-                    print(f"Titles update error: {e}")
+                    logger.warning('Titles update error: %s', e)
             
             # Subtitles шинэчлэх
             subtitles_json = request.data.get('subtitles')
@@ -211,17 +212,15 @@ class CtaViewSet(ModelViewSet):
                                 label=subtitle_item.get('label', '')
                             )
                 except Exception as e:
-                    print(f"Subtitles update error: {e}")
+                    logger.warning('Subtitles update error: %s', e)
             
             response_serializer = self.get_serializer(cta_instance)
             return Response(response_serializer.data)
             
         except Exception as e:
-            print(f"Update error: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.exception('CTA update error')
             return Response(
-                {'error': str(e)},
+                {'error': 'Серверийн алдаа гарлаа'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -242,10 +241,9 @@ class CtaViewSet(ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
             
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            logger.exception('CTA destroy error')
             return Response(
-                {'error': str(e)},
+                {'error': 'Устгахад алдаа гарлаа'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
